@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { SkyflexLogo } from "@/components/skyflex-logo"
-import { WireframeLoader } from "@/components/wireframe-loader"
+} from "@/components/ui/select";
+import { SkyflexLogo } from "@/components/skyflex-logo";
+import { WireframeLoader } from "@/components/wireframe-loader";
 import {
   Eye,
   EyeOff,
@@ -26,30 +26,30 @@ import {
   ArrowRight,
   CheckCircle,
   Upload,
-} from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 // 📦 import from country-state-city
-import { Country, State, City } from "country-state-city"
+import { Country, State, City } from "country-state-city";
 
 const steps = [
   { id: 1, title: "Personal Information", icon: User },
   { id: 2, title: "Account Details", icon: Lock },
   { id: 3, title: "Verification", icon: Shield },
-]
+];
 
 export default function RegisterPage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // location data
-  const [countries, setCountries] = useState<any[]>([])
-  const [states, setStates] = useState<any[]>([])
-  const [cities, setCities] = useState<any[]>([])
+  const [countries, setCountries] = useState<any[]>([]);
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -59,6 +59,7 @@ export default function RegisterPage() {
     countryCode: "",
     dateOfBirth: "",
     ssn: "",
+    initialDeposit: "",
     address: "",
     city: "",
     state: "",
@@ -67,106 +68,108 @@ export default function RegisterPage() {
     username: "",
     password: "",
     confirmPassword: "",
+    pin: "",
+    confirmPin: "",
     accountType: "",
     agreeToTerms: false,
     agreeToMarketing: false,
     passport: null as File | null,
     license: null as File | null,
-  })
+  });
 
-  const router = useRouter()
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200)
-    return () => clearTimeout(timer)
-  }, [])
+  const router = useRouter();
 
   useEffect(() => {
-    setCountries(Country.getAllCountries())
-  }, [])
+    const timer = setTimeout(() => setIsLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    setCountries(Country.getAllCountries());
+  }, []);
 
   // 🔹 Form helpers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked, files } = e.target
+    const { name, value, type, checked, files } = e.target;
     if (type === "file" && files) {
-      setFormData((prev) => ({ ...prev, [name]: files[0] }))
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));
     } else {
       setFormData((prev) => ({
         ...prev,
         [name]: type === "checkbox" ? checked : value,
-      }))
+      }));
     }
-  }
+  };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   // 🔹 Country → State → City cascading
   const handleCountryChange = (value: string) => {
-    handleSelectChange("country", value)
-    const selected = countries.find((c) => c.isoCode === value)
-    setStates(State.getStatesOfCountry(value))
-    setCities([])
+    handleSelectChange("country", value);
+    const selected = countries.find((c) => c.isoCode === value);
+    setStates(State.getStatesOfCountry(value));
+    setCities([]);
     setFormData((prev) => ({
       ...prev,
       state: "",
       city: "",
       zipCode: "",
       countryCode: selected ? `+${selected.phonecode}` : "",
-    }))
-  }
+    }));
+  };
 
   const handleStateChange = (value: string) => {
-    handleSelectChange("state", value)
-    setCities(City.getCitiesOfState(formData.country, value))
-    setFormData((prev) => ({ ...prev, city: "", zipCode: "" }))
-  }
+    handleSelectChange("state", value);
+    setCities(City.getCitiesOfState(formData.country, value));
+    setFormData((prev) => ({ ...prev, city: "", zipCode: "" }));
+  };
 
   const handleCityChange = async (value: string) => {
-    handleSelectChange("city", value)
+    handleSelectChange("city", value);
 
     try {
       // 🔹 Fetch real ZIP from Zippopotam API
       const res = await fetch(
         `https://api.zippopotam.us/${formData.country.toLowerCase()}/${value}`
-      )
+      );
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json();
         if (data.places?.[0]?.["post code"]) {
           setFormData((prev) => ({
             ...prev,
             zipCode: data.places[0]["post code"],
-          }))
-          return
+          }));
+          return;
         }
       }
     } catch (error) {
-      console.error("ZIP lookup failed:", error)
+      console.error("ZIP lookup failed:", error);
     }
 
     // fallback: random zip
     setFormData((prev) => ({
       ...prev,
       zipCode: Math.floor(10000 + Math.random() * 90000).toString(),
-    }))
-  }
+    }));
+  };
 
   // 🔹 Navigation
   const handleNext = () => {
-    if (currentStep < 3) setCurrentStep(currentStep + 1)
-  }
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
+  };
   const handlePrevious = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1)
-  }
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
 
   // 🔹 Submit
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    router.push("/dashboard")
-  }
+    e.preventDefault();
+    setIsSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    router.push("/dashboard");
+  };
 
   // 🔹 Step content
   const renderStepContent = () => {
@@ -216,7 +219,12 @@ export default function RegisterPage() {
               <div>
                 <Label htmlFor="phone">Phone Number</Label>
                 <div className="flex gap-2">
-                  <Input className="w-24" disabled value={formData.countryCode} placeholder="+Code" />
+                  <Input
+                    className="w-24"
+                    disabled
+                    value={formData.countryCode}
+                    placeholder="+Code"
+                  />
                   <Input
                     id="phone"
                     name="phone"
@@ -241,7 +249,8 @@ export default function RegisterPage() {
             </div>
 
             {/* SSN */}
-            <div>
+          <div className="w-full flex gap-8">
+              <div className="w-full">
               <Label htmlFor="ssn">Social Security Number</Label>
               <Input
                 id="ssn"
@@ -250,8 +259,22 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
                 placeholder="XXX-XX-XXXX"
                 required
+                className="w-full"
               />
             </div>
+              <div  className="w-full">
+              <Label htmlFor="ssn">Initial Deposi</Label>
+              <Input
+                id="initialDeposit"
+                name="initialDeposit"
+                value={formData.initialDeposit}
+                onChange={handleInputChange}
+                placeholder=" Enter your initial deposit"
+                required
+                 className="w-full"
+              />
+            </div>
+          </div>
 
             {/* Address */}
             <div>
@@ -284,7 +307,10 @@ export default function RegisterPage() {
               </div>
               <div>
                 <Label>State</Label>
-                <Select onValueChange={handleStateChange} disabled={!states.length}>
+                <Select
+                  onValueChange={handleStateChange}
+                  disabled={!states.length}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
@@ -299,7 +325,10 @@ export default function RegisterPage() {
               </div>
               <div>
                 <Label>City</Label>
-                <Select onValueChange={handleCityChange} disabled={!cities.length}>
+                <Select
+                  onValueChange={handleCityChange}
+                  disabled={!cities.length}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select city" />
                   </SelectTrigger>
@@ -317,10 +346,15 @@ export default function RegisterPage() {
             {/* ZIP */}
             <div>
               <Label htmlFor="zipCode">ZIP Code</Label>
-              <Input id="zipCode" name="zipCode" value={formData.zipCode} readOnly />
+              <Input
+                id="zipCode"
+                name="zipCode"
+                value={formData.zipCode}
+                readOnly
+              />
             </div>
           </div>
-        )
+        );
 
       case 2:
         return (
@@ -328,14 +362,25 @@ export default function RegisterPage() {
             {/* Account Type */}
             <div>
               <Label htmlFor="accountType">Account Type</Label>
-              <Select onValueChange={(v) => handleSelectChange("accountType", v)}>
+              <Select
+                onValueChange={(v) => handleSelectChange("accountType", v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select account type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="personal">Personal Banking</SelectItem>
-                  <SelectItem value="business">Business Banking</SelectItem>
-                  <SelectItem value="premium">Premium Banking</SelectItem>
+                  <SelectItem value="savings">Savings Account</SelectItem>
+                  <SelectItem value="current">Current Account</SelectItem>
+                  <SelectItem value="checking">Checking Accounts</SelectItem>
+                  <SelectItem value="fixed">Fixed Account</SelectItem>
+                  <SelectItem value="non-resident">
+                    Non Resident Account
+                  </SelectItem>
+                  <SelectItem value="online">Online Banking</SelectItem>
+                  <SelectItem value="Domiciliary">
+                    Domiciliary Account
+                  </SelectItem>
+                  <SelectItem value="joint">Joint Account</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -374,7 +419,11 @@ export default function RegisterPage() {
                   className="absolute right-0 top-0 h-full w-12"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -400,12 +449,86 @@ export default function RegisterPage() {
                   className="absolute right-0 top-0 h-full w-12"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>
+
+            <div className="flex gap-8 justify-center">
+              {/* PIN */}
+              <div className="w-full">
+                <Label htmlFor="pin">Pin</Label>
+                <div className="relative  w-full">
+                  <Input
+                    id="pin"
+                    name="pin"
+                    type={showPassword ? "text" : "password"} // 👈 toggle between masked/unmasked
+                    inputMode="numeric" // 👈 show number keypad on mobile
+                    pattern="\d{4}" // 👈 ensures only 4 digits
+                    minLength={4}
+                    maxLength={4}
+                    value={formData.pin}
+                    onChange={handleInputChange}
+                    placeholder="Create your 4-digit PIN"
+                    className="pr-12 text-center tracking-widest w-full"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full w-12"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Confirm Pin */}
+              <div className="w-full">
+                <Label htmlFor="confirmPin">Confirm Pin</Label>
+                <div className="relative w-full">
+                  <Input
+                    id="confirmPin"
+                    name="confirmPin"
+                    type={showConfirmPassword ? "text" : "password"}
+                    inputMode="numeric"
+                    pattern="\d{4}"
+                    minLength={4}
+                    maxLength={4}
+                    value={formData.confirmPin} // 👈 match the state name
+                    onChange={handleInputChange}
+                    placeholder="Confirm your PIN"
+                    className="pr-12 text-center tracking-widest w-full"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full w-12"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
-        )
+        );
 
       case 3:
         return (
@@ -414,7 +537,8 @@ export default function RegisterPage() {
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
               <h3 className="text-xl font-semibold">Final Verification</h3>
               <p className="text-muted-foreground">
-                Upload your documents and confirm your details before submitting.
+                Upload your documents and confirm your details before
+                submitting.
               </p>
             </div>
 
@@ -452,17 +576,29 @@ export default function RegisterPage() {
                   name="agreeToTerms"
                   checked={formData.agreeToTerms}
                   onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, agreeToTerms: checked as boolean }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      agreeToTerms: checked as boolean,
+                    }))
                   }
                   required
                 />
-                <Label htmlFor="agreeToTerms" className="text-sm leading-relaxed">
+                <Label
+                  htmlFor="agreeToTerms"
+                  className="text-sm leading-relaxed"
+                >
                   I agree to the{" "}
-                  <Link href="/terms" className="text-secondary hover:underline">
+                  <Link
+                    href="/terms"
+                    className="text-secondary hover:underline"
+                  >
                     Terms of Service
                   </Link>{" "}
                   and{" "}
-                  <Link href="/privacy" className="text-secondary hover:underline">
+                  <Link
+                    href="/privacy"
+                    className="text-secondary hover:underline"
+                  >
                     Privacy Policy
                   </Link>
                 </Label>
@@ -473,21 +609,28 @@ export default function RegisterPage() {
                   name="agreeToMarketing"
                   checked={formData.agreeToMarketing}
                   onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, agreeToMarketing: checked as boolean }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      agreeToMarketing: checked as boolean,
+                    }))
                   }
                 />
-                <Label htmlFor="agreeToMarketing" className="text-sm leading-relaxed">
-                  I would like to receive marketing communications about American Digit Bank products
+                <Label
+                  htmlFor="agreeToMarketing"
+                  className="text-sm leading-relaxed"
+                >
+                  I would like to receive marketing communications about
+                  American Digit Bank products
                 </Label>
               </div>
             </div>
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <WireframeLoader isLoading={isLoading}>
@@ -505,7 +648,9 @@ export default function RegisterPage() {
               <h1 className="text-3xl font-bold">American Digit Bank</h1>
             </div>
             <h2 className="text-2xl font-bold mb-2">Open Your Account</h2>
-            <p className="text-white/90">Join thousands of satisfied customers</p>
+            <p className="text-white/90">
+              Join thousands of satisfied customers
+            </p>
           </motion.div>
 
           {/* Progress Steps */}
@@ -554,7 +699,9 @@ export default function RegisterPage() {
           >
             <Card className="w-full max-w-2xl mx-auto shadow-2xl">
               <CardHeader className="text-center">
-                <CardTitle className="text-xl font-bold">Step {currentStep} of 3</CardTitle>
+                <CardTitle className="text-xl font-bold">
+                  Step {currentStep} of 3
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <form onSubmit={currentStep === 3 ? handleSubmit : undefined}>
@@ -563,7 +710,11 @@ export default function RegisterPage() {
                   {/* Step navigation */}
                   <div className="flex justify-between pt-6">
                     {currentStep > 1 && (
-                      <Button type="button" variant="outline" onClick={handlePrevious}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handlePrevious}
+                      >
                         Previous
                       </Button>
                     )}
@@ -594,7 +745,8 @@ export default function RegisterPage() {
                             />
                           ) : (
                             <>
-                              Create Account <ArrowRight className="ml-2 w-4 h-4" />
+                              Create Account{" "}
+                              <ArrowRight className="ml-2 w-4 h-4" />
                             </>
                           )}
                         </Button>
@@ -605,7 +757,10 @@ export default function RegisterPage() {
 
                 <div className="text-center text-sm text-muted-foreground">
                   Already have an account?{" "}
-                  <Link href="/login" className="text-secondary hover:underline">
+                  <Link
+                    href="/login"
+                    className="text-secondary hover:underline"
+                  >
                     Sign in here
                   </Link>
                 </div>
@@ -615,5 +770,5 @@ export default function RegisterPage() {
         </div>
       </div>
     </WireframeLoader>
-  )
+  );
 }
