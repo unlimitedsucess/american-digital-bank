@@ -24,6 +24,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 const sidebarItems = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Online Deposit", href: "/dashboard/deposit", icon: Wallet },
@@ -47,13 +49,10 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
   const [isMobile, setIsMobile] = useState(false);
 
   const pathname = usePathname();
+  const customerData = useSelector(
+    (state: RootState) => state.customer.customerData
+  );
 
-  const user = {
-    name: "Malee Chantara Sophia",
-    email: "malee.sophia@email.com",
-    avatar: "/user-avatar.png",
-    balance: "$1,483,400.00",
-  };
 
   useEffect(() => {
     const checkScreen = () => setIsMobile(window.innerWidth < 1024);
@@ -115,9 +114,9 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
               <div className="p-4 border-b border-sidebar-border ">
                 <div className="flex items-center space-x-3">
                   <Avatar className="w-10 h-10">
-                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarImage src={customerData.passportUrl} alt={customerData.firstName} />
                     <AvatarFallback>
-                      {user.name
+                      {customerData.passportUrl || customerData.firstName
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
@@ -125,10 +124,10 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-sidebar-foreground truncate">
-                      {user.name}
+                      {customerData.firstName}
                     </p>
                     <p className="text-xs text-sidebar-foreground/70 truncate">
-                      {user.email}
+                      {customerData.email}
                     </p>
                   </div>
                 </div>
@@ -209,16 +208,16 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
               >
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={customerData.passportUrl} alt={customerData.firstName} />
                   <AvatarFallback>
-                    {user.name
+                    {customerData.userName
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
                 <span className="hidden md:block text-sm font-medium">
-                  {user.name.split(" ")[0]}
+                  {customerData.firstName.split(" ")[0]}
                 </span>
                 <ChevronDown className="w-4 h-4" />
               </Button>
@@ -232,13 +231,13 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
                     className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2 z-50"
                   >
                     <Link
-                      href="/dashboard/profile"
+                      href="/dashboard/settings"
                       className="block px-4 py-2 text-sm text-foreground hover:bg-muted"
                     >
                       Profile Settings
                     </Link>
                     <Link
-                      href="/dashboard/security"
+                      href="/dashboard/settings"
                       className="block px-4 py-2 text-sm text-foreground hover:bg-muted"
                     >
                       Security

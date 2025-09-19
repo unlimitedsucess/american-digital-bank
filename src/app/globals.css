@@ -126,7 +126,14 @@
   * {
     @apply border-border outline-ring/50;
   }
-
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-fast-spin{
+  animation: spin 0.3s linear infinite;
+}
   a,
   button {
     @apply cursor-pointer outline-none transition-all duration-300 ease-in-out hover:scale-105;

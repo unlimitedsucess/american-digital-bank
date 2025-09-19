@@ -14,16 +14,18 @@ import { WireframeLoader } from "@/components/wireframe-loader"
 import { Eye, EyeOff, Shield, Lock, User, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { LoginParams } from "@/types/global"
+import { useDispatch } from "react-redux"
+import { useHttp } from "@/hooks/use-http"
+import { toast } from "sonner"
+import { tokenActions } from "@/store/token/token-slice"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    rememberMe: false,
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
+ 
+
   const router = useRouter()
 
   useEffect(() => {
@@ -39,16 +41,68 @@ export default function LoginPage() {
     }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+ const [formData, setFormData] = useState<LoginParams>({
+    email: "",
+    password: "",
+    rememberMe: false,
+  });
 
-    // Simulate login process
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+ 
 
-    // Redirect to dashboard
-    router.push("/dashboard")
-  }
+  const dispatch = useDispatch();
+
+  const { loading, sendHttpRequest: loginRequest } = useHttp();
+
+  const loginSuccess = (res: any) => {
+    // backend sends { access: "..." }
+    const accessToken = res?.data?.data?.token;
+    console.log("Full response:", res);
+    console.log("Access token:", accessToken);
+
+    if (!accessToken) {
+      toast.error("Login failed: No token received.");
+      return;
+    }
+
+   
+    dispatch(tokenActions.setToken(accessToken));
+
+  
+    router.push("/dashboard");
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields!");
+      return;
+    }
+    if (!formData.email.includes("@")) {
+      toast.error("Please enter a valid email address!");
+      return;
+    }
+
+    // Login request
+    loginRequest({
+      requestConfig: {
+        url: "/auth/signin",
+        method: "POST",
+        body: {
+          email: formData.email,
+          password: formData.password,
+        },
+        userType: "customer", 
+        successMessage: "Login successful!",
+      },
+      successRes: loginSuccess,
+    });
+  };
+
+  const isFormValid = formData.email !== "" && formData.password !== "";
+
+
 
   return (
     <WireframeLoader isLoading={isLoading}>
@@ -101,12 +155,12 @@ export default function LoginPage() {
               <CardContent className="space-y-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="username">Username or Email</Label>
+                    <Label htmlFor="username">Email</Label>
                     <Input
-                      id="username"
-                      name="username"
+                      id="email"
+                      name="email"
                       type="text"
-                      value={formData.username}
+                      value={formData.email}
                       onChange={handleInputChange}
                       placeholder="Enter your username or email"
                       required
@@ -161,9 +215,9 @@ export default function LoginPage() {
                   <Button
                     type="submit"
                     className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                    disabled={isSubmitting}
+                    disabled={ loading || isFormValid}
                   >
-                    {isSubmitting ? (
+                    {loading? (
                       <motion.div
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
@@ -171,7 +225,7 @@ export default function LoginPage() {
                       />
                     ) : (
                       <>
-                        Sign In <ArrowRight className="ml-2 w-4 h-4" />
+                        Sign In {loading? <LoadingSpinner/>:<ArrowRight className="ml-2 w-4 h-4" />}
                       </>
                     )}
                   </Button>

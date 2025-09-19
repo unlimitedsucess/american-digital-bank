@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { WireframeLoader } from "@/components/wireframe-loader";
+import { customerActions } from "@/store/data/customer-slice";
+import { RootState } from "@/store";
 
 import {
   Dialog,
@@ -16,7 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
 
 import {
   DollarSign,
@@ -34,7 +35,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-
+import { useDispatch, useSelector } from "react-redux";
+import { useHttp } from "@/hooks/use-http";
 
 const monthlyData = [
   { month: "Jan", income: 45000, expenses: 32000 },
@@ -88,15 +90,12 @@ const recentTransactions = [
   },
 ];
 
-const summaryData = [
-  { label: "Loan", amount: 500000, color: "bg-blue-500" },
-  { label: "Loan Balance", amount: 0, color: "bg-green-500" },
-  { label: "Expenses", amount: 450000, color: "bg-red-500" },
-];
-
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
+  const customerData = useSelector(
+    (state: RootState) => state.customer.customerData
+  );
 
   const router = useRouter();
 
@@ -104,12 +103,80 @@ export default function DashboardPage() {
     const timer = setTimeout(() => setIsLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
+  console.log("customerData:", customerData);
 
   const user = {
-    name: "Malee Chantara Sophia",
-    balance: 1483400.0,
-    accountNumber: "****4567",
+    name: `${customerData.userName}`,
+    balance: customerData.initialDeposit || 0,
+    accountNumber: customerData.accountNumber || "****",
+    loan: customerData.loan || 0,
+    loanBalance: customerData.loanBalance || 0,
+    expenses: customerData.expenses || 0,
   };
+
+  const summaryData = [
+    { label: "Loan", amount: user.loan, color: "bg-blue-500" },
+    { label: "Loan Balance", amount: user.loanBalance, color: "bg-green-500" },
+    { label: "Expenses", amount: user.expenses, color: "bg-red-500" },
+  ];
+
+  console.log("my username:-----", user.name);
+
+  const { sendHttpRequest: userInforHttpRequest } = useHttp();
+  const dispatch = useDispatch();
+
+  const token = useSelector((state: any) => state.token?.token);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchUserSucRes = (res: any) => {
+      const resData = res?.data;
+      console.log("User info response:", resData);
+
+      const user = resData?.data;
+      console.log("Resolved user:", user);
+
+      // ✅ Save to Redux customer slice
+      dispatch(
+        customerActions.updateCustomerData({
+          email: user?.email,
+          phoneNo: user?.phoneNo,
+          firstName: user?.first_name || user?.firstName,
+          lastName: user?.last_name || user?.lastName,
+          accountNumber: user?.accountNumber,
+          address: user?.address,
+          country: user?.country,
+          city: user?.city,
+          accountType: user?.accountType,
+          userName: user?.userName,
+          pin: user?.pin,
+          expenses: user?.expenses,
+          loan: user?.loan,
+          loanBalance: user?.loanBalance,
+          passportUrl: user?.passportUrl,
+          driversLicence: user?.driversLicence,
+          emailVerified: user?.emailVerified,
+          state: user?.state,
+          createdAt: user?.createdAt,
+          updatedAt: user?.updatedAt,
+          initialDeposit: user?.initialDeposit,
+        })
+      );
+    };
+
+    userInforHttpRequest({
+      requestConfig: {
+        url: "/user",
+        method: "GET",
+        token,
+        isAuth: true,
+        successMessage: "User info fetched",
+        userType: "customer",
+      },
+      successRes: fetchUserSucRes,
+    });
+  }, [token, dispatch]);
 
   return (
     <WireframeLoader isLoading={isLoading}>
@@ -167,43 +234,47 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 </div>
-          <div className="flex space-x-4">
-  <Button
-    onClick={() => router.push("/dashboard/deposit")}
-    className="bg-white/20 text-white hover:bg-white/30 border-0"
-  >
-    <DollarSign className="w-4 h-4 mr-2" />
-    Deposit
-  </Button>
+                <div className="flex space-x-4">
+                  <Button
+                    onClick={() => router.push("/dashboard/deposit")}
+                    className="bg-white/20 text-white hover:bg-white/30 border-0"
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Deposit
+                  </Button>
 
-  <Dialog>
-    <DialogTrigger asChild>
-      <Button className="bg-white/20 text-white hover:bg-white/30 border-0">
-        <ArrowUpRight className="w-4 h-4 mr-2" />
-        Transfer
-      </Button>
-    </DialogTrigger>
-    <DialogContent className="max-w-sm">
-      <DialogHeader>
-        <DialogTitle>Select Transfer Type</DialogTitle>
-      </DialogHeader>
-      <div className="flex flex-col space-y-3">
-        <Button
-          className="w-full"
-          onClick={() => router.push("/dashboard/wire-transfer")}
-        >
-          Wire Transfer
-        </Button>
-        <Button
-          className="w-full"
-          onClick={() => router.push("/dashboard/domestic-transfer")}
-        >
-          Domestic Transfer
-        </Button>
-      </div>
-    </DialogContent>
-  </Dialog>
-</div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="bg-white/20 text-white hover:bg-white/30 border-0">
+                        <ArrowUpRight className="w-4 h-4 mr-2" />
+                        Transfer
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-sm">
+                      <DialogHeader>
+                        <DialogTitle>Select Transfer Type</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex flex-col space-y-3">
+                        <Button
+                          className="w-full"
+                          onClick={() =>
+                            router.push("/dashboard/wire-transfer")
+                          }
+                        >
+                          Wire Transfer
+                        </Button>
+                        <Button
+                          className="w-full"
+                          onClick={() =>
+                            router.push("/dashboard/domestic-transfer")
+                          }
+                        >
+                          Domestic Transfer
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </CardContent>
             </Card>
           </motion.div>

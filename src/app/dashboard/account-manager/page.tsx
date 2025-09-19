@@ -8,18 +8,19 @@ import { Badge } from "@/components/ui/badge"
 import { WireframeLoader } from "@/components/wireframe-loader"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Button } from "@/components/ui/button"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store"
 
-const accountManager = {
-  name: "Sarah Johnson",
-  email: "sarah.johnson@bankcorp.com",
-  phone: "+1 (555) 234-5678",
-  profilePic: "https://randomuser.me/api/portraits/women/45.jpg",
-  accountType: "Premium Savings",
-  transactionLimit: "$10,000 / day",
-  accountName: "Sarah J. / Corporate Account",
-  accountNumber: "12345678901234", // real format in your DB
-}
 
+
+
+
+export default function AccountManagersPage() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [showNumber, setShowNumber] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<null | "copied" | "error">(null)
+
+  const  customerData = useSelector((state:RootState)=>state.customer.customerData)
 function maskAccountNumber(num = "") {
   const last4 = num.slice(-4)
   const masked = num.slice(0, -4).replace(/\d/g, "•")
@@ -27,11 +28,16 @@ function maskAccountNumber(num = "") {
   const groups = (masked + last4).match(/.{1,4}/g) || []
   return groups.join(" ")
 }
-
-export default function AccountManagersPage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [showNumber, setShowNumber] = useState(false)
-  const [copyStatus, setCopyStatus] = useState<null | "copied" | "error">(null)
+const accountManager = {
+  name: "Sarah Johnson",
+  email: "sarah.johnson@bankcorp.com",
+  phone: "+1 (555) 234-5678",
+  profilePic: "https://randomuser.me/api/portraits/women/45.jpg",
+  accountType: customerData.accountType,
+  transactionLimit: "$5,000,000 / day",
+  accountName: `${customerData.firstName} ${customerData.lastName}`,
+  accountNumber: customerData.accountNumber // real format in your DB
+}
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 900)
