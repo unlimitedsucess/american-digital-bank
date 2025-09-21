@@ -19,160 +19,82 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import DashboardWrapper from "@/components/admin/DashBoradWrapper";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/store";
+import { useRouter } from "next/navigation";
 
-type LoanStatus = "Pending" | "Approved" | "Redeemed" | "Overdue";
-
-type Loan = {
-  id: number;
-  name: string;
-  applicationDate: string; // yyyy-mm-dd
-  expiryDate: string; // yyyy-mm-dd
-  creditLimit: number;
-  loanAmount: number; // principal still owed
-  balance: number; // user’s balance
-  status: LoanStatus;
-  outstandingInterest: number; // interest accumulated
-  lastInterestDate?: string; // last date interest was applied
-};
-
-const initialLoans: Loan[] = [
-  {
-    id: 1,
-    name: "John Doe",
-    applicationDate: "2025-09-01",
-    expiryDate: "2025-09-12", // already expired
-    creditLimit: 5000,
-    loanAmount: 2000,
-    balance: 1500,
-    status: "Pending",
-    outstandingInterest: 0,
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    applicationDate: "2025-08-15",
-    expiryDate: "2025-11-15",
-    creditLimit: 7000,
-    loanAmount: 3500,
-    balance: 1500,
-    status: "Approved",
-    outstandingInterest: 0,
-  },
-];
+import { updateLoanStatus } from "@/store/data/admin-slice"; // make sure you have this action
+import { useHttp } from "@/hooks/use-http";
 
 export default function LoanManagementPage() {
-  const [loans, setLoans] = useState<Loan[]>(initialLoans);
-  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const dispatch = useDispatch();
+  const { loading, sendHttpRequest: LoanActionRequest } = useHttp();
+
+    const token = useSelector((state: any) => state.token?.token);
+    const router = useRouter();
+
+  const loanData = useSelector((state: RootState) => state.admin.loans);
+
+  const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filter, setFilter] = useState<"All" | "Pending" | "Approved" | "Redeemed" | "Overdue">("All");
 
-  const [filter, setFilter] = useState<"All" | LoanStatus>("All");
-
-  // auto-check expiry + interest accrual
-  useEffect(() => {
-    const now = new Date();
-
-    setLoans((prev) =>
-      prev.map((loan) => {
-        if (loan.status === "Redeemed") return loan;
-
-        const expiry = new Date(loan.expiryDate);
-
-        // If expired → overdue
-        if (expiry < now && loan.status !== "Overdue") {
-          return { ...loan, status: "Overdue", lastInterestDate: now.toISOString() };
-        }
-
-        // If already overdue → add daily 2% interest
-        if (loan.status === "Overdue" && loan.loanAmount > 0) {
-          const lastDate = loan.lastInterestDate
-            ? new Date(loan.lastInterestDate)
-            : expiry;
-          const daysPassed = Math.floor(
-            (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-          );
-
-          if (daysPassed > 0) {
-            const newInterest =
-              loan.outstandingInterest + loan.loanAmount * 0.02 * daysPassed;
-            return {
-              ...loan,
-              outstandingInterest: parseFloat(newInterest.toFixed(2)),
-              lastInterestDate: now.toISOString(),
-            };
-          }
-        }
-
-        return loan;
-      })
-    );
-  }, []);
-
-  const handleView = (loan: Loan) => {
+  // ========== HANDLERS ==========
+  const handleView = (loan: any) => {
     setSelectedLoan(loan);
     setIsDialogOpen(true);
   };
 
-  // approve loan
-  const handleApprove = (id: number) => {
-    setLoans((prev) =>
-      prev.map((loan) =>
-        loan.id === id
-          ? {
-              ...loan,
-              status: "Approved",
-              balance: loan.balance + loan.loanAmount,
-            }
-          : loan
-      )
-    );
-    setIsDialogOpen(false);
-  };
+    useEffect(() => {
+      if (!token) {
+        router.push("/adminlogin");
+      }
+    }, [token, router]);
+  
 
-  // redeem loan (includes interest)
-  const handleRedeem = (id: number) => {
-    setLoans((prev) =>
-      prev.map((loan) => {
-        if (loan.id !== id) return loan;
+const handleApprove = (id: string) => {
+  LoanActionRequest({
+    requestConfig: {
+        url: `/admin/transaction/`,
+        method: "DELETE",
+        token,
+        isAuth: true,
+      body: { status: "Approved" },
+    },
+    successRes: () => {
+      dispatch(updateLoanStatus({ id, status: "Approved" }));
+      setIsDialogOpen(false);
+    },
+  });
+};
+  // const handleRedeem = async (id: string) => { 
+  //   try {  
+  //     await sendRequest({
+  //       url: `/admin/update/loan/${id}`,
+  //       method: "PATCH",
+  //       body: { status: "Redeemed" },
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     dispatch(updateLoanStatus({ id, status: "Redeemed" }));
+  //     setIsDialogOpen(false);
+  //   } catch (err) {
+  //     console.error("Redeem failed", err);
+  //   }
+  // };
 
-        const totalOwed = loan.loanAmount + loan.outstandingInterest;
-
-        if (loan.balance >= totalOwed) {
-          // full repayment
-          return {
-            ...loan,
-            balance: loan.balance - totalOwed,
-            loanAmount: 0,
-            outstandingInterest: 0,
-            status: "Redeemed",
-          };
-        } else {
-          // partial repayment → deduct as much as possible
-          const remainingOwed = totalOwed - loan.balance;
-          return {
-            ...loan,
-            balance: 0,
-            loanAmount: remainingOwed, // we keep everything under loanAmount for simplicity
-            outstandingInterest: 0,
-            status: "Overdue",
-          };
-        }
-      })
-    );
-    setIsDialogOpen(false);
-  };
-
+  // ========== FILTER ==========
   const filteredLoans =
-    filter === "All" ? loans : loans.filter((l) => l.status === filter);
+    filter === "All" ? loanData : loanData.filter((l) => l.status === filter);
 
   const counts = {
-    all: loans.length,
-    pending: loans.filter((l) => l.status === "Pending").length,
-    approved: loans.filter((l) => l.status === "Approved").length,
-    redeemed: loans.filter((l) => l.status === "Redeemed").length,
-    overdue: loans.filter((l) => l.status === "Overdue").length,
+    All: loanData.length,
+    Pending: loanData.filter((l) => l.status === "Pending").length,
+    Approved: loanData.filter((l) => l.status === "Approved").length,
+    Redeemed: loanData.filter((l) => l.status === "Redeemed").length,
+    Overdue: loanData.filter((l) => l.status === "Overdue").length,
   };
 
-  const statusBadgeClass = (status: LoanStatus) =>
+  const statusBadgeClass = (status: string) =>
     status === "Approved"
       ? "bg-green-500"
       : status === "Pending"
@@ -197,7 +119,7 @@ export default function LoanManagementPage() {
                       filter === tab ? "bg-slate-200" : "hover:bg-slate-100"
                     }`}
                   >
-                    {tab} ({counts[tab.toLowerCase() as keyof typeof counts]})
+                    {tab} ({counts[tab]})
                   </button>
                 )
               )}
@@ -211,26 +133,26 @@ export default function LoanManagementPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Application Date</TableHead>
                   <TableHead>Expiry Date</TableHead>
-                  <TableHead>Credit Limit</TableHead>
                   <TableHead>Loan Amount</TableHead>
-                  <TableHead>Outstanding Interest</TableHead>
-                  <TableHead>Balance</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLoans.map((loan) => (
-                  <TableRow key={loan.id}>
-                    <TableCell>{loan.name}</TableCell>
-                    <TableCell>{loan.applicationDate}</TableCell>
-                    <TableCell>{loan.expiryDate}</TableCell>
-                    <TableCell>${loan.creditLimit}</TableCell>
-                    <TableCell>${loan.loanAmount}</TableCell>
-                    <TableCell>${loan.outstandingInterest.toFixed(2)}</TableCell>
-                    <TableCell>${loan.balance}</TableCell>
+                {filteredLoans.map((loan: any) => (
+                  <TableRow key={loan._id}>
+                    <TableCell>{loan.userId?.firstName}</TableCell>
                     <TableCell>
-                      <Badge className={statusBadgeClass(loan.status)}>
+                      {new Date(loan.createdAt).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      {loan.expiryDate
+                        ? new Date(loan.expiryDate).toLocaleString()
+                        : "N/A"}
+                    </TableCell>
+                    <TableCell>${loan.loanAmount}</TableCell>
+                    <TableCell>
+                      <Badge className={statusBadgeClass(loan?.status)}>
                         {loan.status}
                       </Badge>
                     </TableCell>
@@ -243,20 +165,19 @@ export default function LoanManagementPage() {
                         View
                       </Button>
                       {loan.status === "Pending" && (
-                        <Button size="sm" onClick={() => handleApprove(loan.id)}>
+                        <Button size="sm" onClick={() => handleApprove(loan._id)}>
                           Approve
                         </Button>
                       )}
-                      {(loan.status === "Approved" || loan.status === "Overdue") &&
-                        loan.loanAmount + loan.outstandingInterest > 0 && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleRedeem(loan.id)}
-                            className="bg-blue-500 hover:bg-blue-600"
-                          >
-                            Redeem
-                          </Button>
-                        )}
+                      {(loan.status === "Approved" || loan.status === "Overdue") && (
+                        <Button
+                          size="sm"
+                          onClick={() => (loan._id)}
+                          className="bg-blue-500 hover:bg-blue-600"
+                        >
+                          Redeem
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -280,13 +201,20 @@ export default function LoanManagementPage() {
             </DialogHeader>
             {selectedLoan && (
               <div className="space-y-3">
-                <p><strong>Name:</strong> {selectedLoan.name}</p>
-                <p><strong>Balance:</strong> ${selectedLoan.balance}</p>
+                <p><strong>Name:</strong> {selectedLoan.userId?.firstName}</p>
                 <p><strong>Loan Amount:</strong> ${selectedLoan.loanAmount}</p>
-                <p><strong>Outstanding Interest:</strong> ${selectedLoan.outstandingInterest.toFixed(2)}</p>
+                <p><strong>Outstanding Interest:</strong> ${selectedLoan.outstandingInterest?.toFixed(2) ?? 0}</p>
                 <p><strong>Credit Limit:</strong> ${selectedLoan.creditLimit}</p>
-                <p><strong>Application Date:</strong> {selectedLoan.applicationDate}</p>
-                <p><strong>Expiry Date:</strong> {selectedLoan.expiryDate}</p>
+                <p>
+                  <strong>Application Date:</strong>{" "}
+                  {new Date(selectedLoan.createdAt).toLocaleString()}
+                </p>
+                <p>
+                  <strong>Expiry Date:</strong>{" "}
+                  {selectedLoan.expiryDate
+                    ? new Date(selectedLoan.expiryDate).toLocaleString()
+                    : "N/A"}
+                </p>
                 <p>
                   <strong>Status:</strong>{" "}
                   <Badge className={statusBadgeClass(selectedLoan.status)}>
@@ -296,22 +224,21 @@ export default function LoanManagementPage() {
                 <div className="flex flex-col gap-2 pt-2">
                   {selectedLoan.status === "Pending" && (
                     <Button
-                      onClick={() => handleApprove(selectedLoan.id)}
+                      onClick={() => handleApprove(selectedLoan._id)}
                       className="w-full"
                     >
                       Approve Loan
                     </Button>
                   )}
                   {(selectedLoan.status === "Approved" ||
-                    selectedLoan.status === "Overdue") &&
-                    selectedLoan.loanAmount + selectedLoan.outstandingInterest > 0 && (
-                      <Button
-                        onClick={() => handleRedeem(selectedLoan.id)}
-                        className="w-full bg-blue-500 hover:bg-blue-600"
-                      >
-                        Redeem
-                      </Button>
-                    )}
+                    selectedLoan.status === "Overdue") && (
+                    <Button
+                      onClick={() => (selectedLoan._id)}
+                      className="w-full bg-blue-500 hover:bg-blue-600"
+                    >
+                      Redeem
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

@@ -4,24 +4,34 @@ import DashboardWrapper from "@/components/admin/DashBoradWrapper";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 // Dummy active users list
-const activeUsers = [
-  { id: "1", firstName: "Jane", lastName: "Smith", email: "jane@example.com", status: "Active" },
-  { id: "2", firstName: "David", lastName: "Brown", email: "david@example.com", status: "Active" },
-  { id: "3", firstName: "Sarah", lastName: "Johnson", email: "sarah@example.com", status: "Active" },
-];
 
 export default function ActiveUsersPage() {
+  const AdminData = useSelector((state: RootState) => state.admin);
+
+  const activeUsers = AdminData.users.filter(
+    (user) =>
+      user.accountStatus === "active" || user.accountStatus === "suspended"
+  );
+
+
   return (
     <DashboardWrapper>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Active Users</h1>
-        <p className="text-gray-600">Total Active Users: {activeUsers.length}</p>
+        <p className="text-gray-600">
+          Total Active Users: {activeUsers.length}
+        </p>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activeUsers.map((user) => (
-            <Card key={user.id} className="shadow-md hover:shadow-lg transition">
+            <Card
+              key={user.id}
+              className="shadow-md hover:shadow-lg transition"
+            >
               <CardHeader>
                 <CardTitle>
                   {user.firstName} {user.lastName}
@@ -29,15 +39,20 @@ export default function ActiveUsersPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600">{user.email}</p>
-                <p className="text-sm font-medium text-green-600">{user.status}</p>
+                <p
+                  className={`text-sm font-medium ${
+                    user.accountStatus === "suspended"
+                      ? "text-orange-500"
+                      : "text-green-600"
+                  }`}
+                >
+                  {user.accountStatus}
+                </p>
 
                 <div className="mt-4 flex gap-3">
-                  <Link href={`/admin/active/${user.id}`}>
+                  <Link href={`/admin/active/${user._id}`}>
                     <Button size="sm">View</Button>
                   </Link>
-                  <Button size="sm" variant="outline">
-                    Message
-                  </Button>
                 </div>
               </CardContent>
             </Card>

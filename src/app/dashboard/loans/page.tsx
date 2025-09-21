@@ -4,30 +4,81 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { WireframeLoader } from "@/components/wireframe-loader";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { loanApplication } from "@/types/global";
+import { useHttp } from "@/hooks/use-http";
+import { useSelector } from "react-redux";
+import { toast } from "sonner";
+
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export default function LoanPage() {
-  const [amount, setAmount] = useState("");
-  const [duration, setDuration] = useState("1"); // default 1 month
+ 
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pin, setPin] = useState(["", "", "", ""]); // 4-digit pin array
+
   const [submitted, setSubmitted] = useState(false);
+  const token = useSelector((state: any) => state.token?.token);
 
   // Interest rates based on duration (example values)
-  const interestRates: Record<string, number> = {
-    "1": 5, // 5% for 1 month
-    "2": 8,
-    "3": 10,
-    "6": 15,
-    "12": 20, // 20% for 12 months
+  const durationOptions: Record<string, { months: number; interest: number }> =
+    {
+      "1month_5": { months: 1, interest: 5 },
+      "2month_8": { months: 2, interest: 8 },
+      "3month_10": { months: 3, interest: 10 },
+      "6month_15": { months: 6, interest: 15 },
+      "12month_20": { months: 12, interest: 20 },
+    };
+
+  const [formData, setFormData] = useState<loanApplication>({
+    loanDuraion: "",
+    loanAmount: 0,
+    pin: "",
+  });
+  const selectedDuration = durationOptions[formData.loanDuraion];
+  const interestRate = selectedDuration?.interest || 0;
+
+  // Total repayment (simple interest)
+  const totalRepay = formData.loanAmount * (1 + interestRate / 100);
+  const { loading, sendHttpRequest: LoanRequest } = useHttp();
+
+  const handleChange = (
+    field: keyof loanApplication,
+    value: string | number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-  };
+  const handleSubmit = (pinValue: string) => {
+    if (!formData.loanDuraion || !formData.loanAmount) {
+      toast.error("Please fill in all fields!");
+      return;
+    }
 
-  // Calculate repayment
-  const loanAmount = parseFloat(amount) || 0;
-  const interestRate = interestRates[duration] || 0;
-  const totalRepay = loanAmount + (loanAmount * interestRate) / 100;
+    const submissionData = { ...formData, pin: pinValue };
+
+    LoanRequest({
+      requestConfig: {
+        url: "loan/apply",
+        method: "POST",
+        body: submissionData,
+        token,
+        isAuth: true,
+        successMessage: " Successful",
+      },
+      successRes: () => {
+        toast.success("Transfer successful!");
+
+        setShowPinModal(false);
+        setSubmitted(true);
+      },
+    });
+  };
 
   return (
     <WireframeLoader isLoading={false}>
@@ -74,7 +125,7 @@ export default function LoanPage() {
                 ✅ Submitted, under review
               </motion.p>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form className="space-y-4">
                 {/* Loan Amount */}
                 <div>
                   <label className="block text-sm font-medium text-gray-600">
@@ -82,8 +133,8 @@ export default function LoanPage() {
                   </label>
                   <input
                     type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    value={formData.loanAmount}
+                    onChange={(e) => handleChange("loanAmount", e.target.value)}
                     className="w-full mt-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:ring-blue-400"
                     placeholder="Enter amount"
                     required
@@ -96,20 +147,22 @@ export default function LoanPage() {
                     Duration
                   </label>
                   <select
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
+                    value={formData.loanDuraion}
+                    onChange={(e) =>
+                      handleChange("loanDuraion", e.target.value)
+                    }
                     className="w-full mt-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:ring-blue-400"
                   >
-                    <option value="1">1 Month (5%)</option>
-                    <option value="2">2 Months (8%)</option>
-                    <option value="3">3 Months (10%)</option>
-                    <option value="6">6 Months (15%)</option>
-                    <option value="12">12 Months (20%)</option>
+                    <option value="1month_5">1 Month (5%)</option>
+                    <option value="2month_8">2 Months (8%)</option>
+                    <option value="3month_10">3 Months (10%)</option>
+                    <option value="6month_15">6 Months (15%)</option>
+                    <option value="12month_20">12 Months (20%)</option>
                   </select>
                 </div>
 
                 {/* Repayment Calculation */}
-                {loanAmount > 0 && (
+                {formData.loanAmount > 0 && (
                   <motion.div
                     className="p-3 bg-gray-100 rounded-md text-gray-700"
                     initial={{ opacity: 0 }}
@@ -119,6 +172,7 @@ export default function LoanPage() {
                       Interest Rate:{" "}
                       <span className="font-semibold">{interestRate}%</span>
                     </p>
+
                     <p>
                       Total Repayment:{" "}
                       <span className="font-bold text-blue-600">
@@ -129,7 +183,8 @@ export default function LoanPage() {
                 )}
 
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={() => setShowPinModal(true)}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-2 transition"
                 >
                   Submit Application
@@ -137,6 +192,58 @@ export default function LoanPage() {
               </form>
             )}
           </motion.div>
+          {showPinModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <Card className="p-6 w-full max-w-sm">
+                <button onClick={() => setShowPinModal(false)}>close</button>
+                <CardHeader>
+                  <CardTitle>Enter Your 4-Digit PIN</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-between space-x-2 mb-4">
+                    {pin.map((digit, index) => (
+                      <Input
+                        key={index}
+                        id={`pin-${index}`}
+                        type="text"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/, "");
+                          setPin((prev) => {
+                            const newPin = [...prev];
+                            newPin[index] = val;
+                            return newPin;
+                          });
+                          if (val && index < 3) {
+                            const nextInput = document.getElementById(
+                              `pin-${index + 1}`
+                            );
+                            nextInput?.focus();
+                          }
+                        }}
+                        className="text-center w-12"
+                      />
+                    ))}
+                  </div>
+                  <Button
+                    disabled={loading}
+                    onClick={() => {
+                      const fullPin = pin.join("");
+                      if (fullPin.length < 4) {
+                        toast.error("Please enter your 4-digit PIN");
+                        return;
+                      }
+
+                      handleSubmit(fullPin); // ✅ pass pin here
+                    }}
+                  >
+                    {loading ? <LoadingSpinner /> : "Confirm Loan"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </motion.div>
       </DashboardSidebar>
     </WireframeLoader>

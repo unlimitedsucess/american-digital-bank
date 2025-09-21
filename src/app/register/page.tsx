@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SkyflexLogo } from "@/components/skyflex-logo";
+import { AmericanHLogo } from "@/components/skyflex-logo";
 import { WireframeLoader } from "@/components/wireframe-loader";
 import {
   Eye,
@@ -204,7 +204,7 @@ export default function RegisterPage() {
       if (
         !formData.userName ||
         !formData.password ||
-        !formData.confirmPassword||
+        !formData.confirmPassword ||
         !formData.pin ||
         !formData.confirmPin ||
         !formData.accountType
@@ -664,6 +664,12 @@ export default function RegisterPage() {
           <SelectContent>
             <SelectItem value="savings">Savings</SelectItem>
             <SelectItem value="current">Current</SelectItem>
+            <SelectItem value="checking">Checking</SelectItem>
+            <SelectItem value="fixed">Fixed</SelectItem>
+            <SelectItem value="non-resident">Non-Resident</SelectItem>
+            <SelectItem value="online">Online</SelectItem>
+            <SelectItem value="domiciliary">Domiciliary</SelectItem>
+            <SelectItem value="joint">Joint</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -754,8 +760,8 @@ export default function RegisterPage() {
               className="text-center text-white mb-8"
             >
               <div className="flex items-center justify-center space-x-4 mb-4">
-                <SkyflexLogo size="md" />
-                <h1 className="text-3xl font-bold">American Digit Bank</h1>
+                <AmericanHLogo size="md" />
+                <h1 className="text-3xl font-bold">American Horizon</h1>
               </div>
               <h2 className="text-2xl font-bold mb-2">Open Your Account</h2>
               <p className="text-white/90">

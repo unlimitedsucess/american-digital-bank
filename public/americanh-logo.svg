@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="americanHGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sky element - curved top -->
+  <path d="M20 40 Q50 20 80 40 L80 60 Q50 40 20 60 Z" fill="url(#americanHGradient)" />
+
+  <!-- Flex element - static lines -->
+  <path d="M25 70 L75 70 M30 75 L70 75 M35 80 L65 80" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Central diamond -->
+  <polygon points="50,45 55,50 50,55 45,50" fill="#f43f5e" />
+</svg>

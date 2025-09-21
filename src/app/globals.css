@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color tokens for American Digit Bank branding with gold and blue theme */
+  /* Updated color tokens for American Horizon branding with gold and blue theme */
   --background: oklch(1 0 0); /* White background */
   --foreground: oklch(0.2 0 0); /* Dark gray text */
   --card: oklch(0.98 0 0); /* Light card background */

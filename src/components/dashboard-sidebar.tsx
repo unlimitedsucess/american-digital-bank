@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SkyflexLogo } from "./skyflex-logo";
+import { AmericanHLogo } from "./skyflex-logo";
 import {
   Home,
   CreditCard,
@@ -94,9 +94,9 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between px-4 py-3.5 border-b border-sidebar-border">
                 <Link href="/" className="flex items-center space-x-3">
-                  <SkyflexLogo size="sm" />
+                  <AmericanHLogo size="sm" />
                   <span className="text-lg font-bold text-sidebar-foreground">
-                    American Digit Bank
+                    American Horizon
                   </span>
                 </Link>
                 {isMobile && (

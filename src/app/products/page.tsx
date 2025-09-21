@@ -214,7 +214,7 @@ export default function ProductsPage() {
               viewport={{ once: true }}
               className="text-center mb-16"
             >
-              <h2 className="text-4xl font-bold text-accent-foreground mb-4">Why Choose American Digit Bank?</h2>
+              <h2 className="text-4xl font-bold text-accent-foreground mb-4">Why Choose American Horizon?</h2>
               <p className="text-xl text-accent-foreground max-w-2xl mx-auto">
                 Experience banking with features designed for your convenience and security
               </p>

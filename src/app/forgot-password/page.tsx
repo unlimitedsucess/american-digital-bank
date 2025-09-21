@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { SkyflexLogo } from "@/components/skyflex-logo"
+import { AmericanHLogo } from "@/components/skyflex-logo"
 import { WireframeLoader } from "@/components/wireframe-loader"
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react"
 import Link from "next/link"
@@ -46,8 +46,8 @@ export default function ForgotPasswordPage() {
             className="text-center text-white mb-8"
           >
             <div className="flex items-center justify-center space-x-4 mb-4">
-              <SkyflexLogo size="md" />
-              <h1 className="text-3xl font-bold">American Digit Bank</h1>
+              <AmericanHLogo size="md" />
+              <h1 className="text-3xl font-bold">American Horizon</h1>
             </div>
           </motion.div>
 

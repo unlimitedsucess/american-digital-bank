@@ -31,7 +31,7 @@ const contactInfo = [
   {
     icon: MapPin,
     title: "Address",
-    details: ["American Digit Bank Headquarters", "123 Financial District", "New York, NY 10001"],
+    details: ["American Horizon Headquarters", "123 Financial District", "New York, NY 10001"],
   },
   {
     icon: Clock,

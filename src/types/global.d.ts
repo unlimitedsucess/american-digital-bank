@@ -128,6 +128,11 @@ export interface LoginParams {
   password: string;
   rememberMe: boolean;
 }
+export interface AdminLoginParams {
+  userName: string;
+  password: string;
+  rememberMe: boolean;
+}
 
 export interface ResetPasswordModalProps {
   isOpen: boolean;
@@ -416,7 +421,7 @@ export type Data = {
   initialDeposit: string;
   expenses: string;
   loan: string;
-  phoneNo : "",
+  phoneNo: "";
   loanBalance: string;
   passportUrl: string;
   driversLicence: string;
@@ -427,10 +432,60 @@ export type Data = {
   state: string;
 };
 
-// Your slice params type
-export type CustomerSliceParams = {
-  customerData: Data;
+interface Transaction {
+  id: string;
+  accountType: string;
+  recipientName: string;
+  accountNumber: string;
+  country?: string;
+  swiftCode?: string;
+  routingNumber?: string;
+  description?: string;
+  amount: number;
+  transferType: string;
+  transactionType: string;
+  transactionDirection: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  bankName?: string;
+  userId: {
+    _id: string;
+  };
+}
+
+export type WireTransfer = {
+  accountType: string;
+  recipientName: string;
+  accountNumber: string;
+  country: string;
+  swiftCode: string;
+  routingNumber: string;
+  description: string;
+  amount: number;
+  pin: string;
 };
+export type DomesticTransfer = {
+  accountType: string;
+  recipientName: string;
+  accountNumber: string;
+  description: string;
+  amount: number;
+  bankName?: string;
+  pin?: string;
+  transactionDate?: string;
+};
+export type loanApplication = {
+  loanAmount: number;
+  loanDuraion: string;
+  pin: string;
+};
+export interface CustomerSliceParams {
+  customerData: Data;
+  transactions: Transaction[];
+  remainingTransferLimit: number;
+  cards: Card[];
+}
 
 // Define the Profile type first
 export type SellerProfile = {
@@ -535,4 +590,149 @@ export interface CustomerData {
   phone?: string | null;
   phone2?: string | null;
   profile?: SellerProfile;
+}
+
+export interface Card {
+  _id: string; // from server
+  userId: string;
+  cardType: string;
+  pin: string;
+  ccv: string;
+  expiryDate: string; // ✅ from server
+  cardNumber?: string; // optional if backend sends
+  holder?: string; // optional if backend sends
+  status: "active" | "de-activated"; // ✅ only backend truth
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type ApplyedCard = {
+  pin: string;
+  cardType: string;
+};
+interface User {
+  _id: string;
+  pin: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNo: string;
+  dob: string;
+  zipCode: string;
+  ssn: string;
+  initialDeposit: number;
+  loan: number;
+  loanBalance: number;
+  expenses: number;
+  accountNumber: string;
+  address: string;
+  accountStatus: string;
+  country: string;
+  state: string;
+  city: string;
+  accountType: string;
+  userName: string;
+  passportUrl: string;
+  driversLicence: string;
+  emailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  id: string;
+}
+
+interface Transaction {
+  _id: string;
+  accountType: string;
+  recipientName: string;
+  accountNumber: string;
+  country?: string;
+  swiftCode?: string;
+  routingNumber?: string;
+  bankName?: string;
+  description?: string | null;
+  amount: number;
+  transferType: string;
+  transactionType?: string;
+  transactionDirection?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  id: string;
+}
+
+interface Loan {
+  _id: string;
+  loanDuraion: string;
+  status: string;
+  loanAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  id: string;
+  userId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNo: string;
+    dob: string;
+    zipCode: string;
+    ssn: string;
+    initialDeposit: number;
+    loan: number;
+    loanBalance: number;
+    expenses: number;
+    accountNumber: string;
+    address: string;
+    accountStatus: string;
+    country: string;
+    state: string;
+    city: string;
+    accountType: string;
+    userName: string;
+    passportUrl: string;
+    driversLicence: string;
+    emailVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
+    id: string;
+  };
+}
+
+interface AdminCard {
+  _id: string;
+  createdAt: string;
+  updatedAt: string;
+  id: string;
+  // add more card fields here if your API returns them
+}
+
+interface AdminState {
+  users: User[];
+  transactions: Transaction[];
+  loans: Loan[];
+  cards: AdminCard[];
+  loading: boolean;
+  error: string | null;
+}
+interface EditingUser {
+  firstName: string;
+  lastName: string;
+  userName: string;
+  password: string;
+  email: string;
+  phoneNo: string; // full number without country code
+  dob: string;
+  ssn: string;
+  initialDeposit: number;
+  address: string;
+  country: string;
+  state: string;
+  city: string;
+  zipCode: string;
+  accountType: string;
+  countryCode: string; // for phone number
+  pin: string;
+  passportFile?: File; // optional file for upload
+  driversLicenceFile?: File; // optional file for upload
 }

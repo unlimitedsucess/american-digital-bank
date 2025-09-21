@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { SkyflexLogo } from "./skyflex-logo"
+import { AmericanHLogo } from "./skyflex-logo"
 import { Menu, X, ChevronDown } from "lucide-react"
 
 const navigationItems = [
@@ -40,8 +40,8 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <SkyflexLogo size="sm" />
-            <span className="text-xl font-bold text-foreground">American Digit Bank</span>
+            <AmericanHLogo size="sm" />
+            <span className="text-xl font-bold text-foreground">American Horizon</span>
           </Link>
 
           {/* Desktop Navigation */}

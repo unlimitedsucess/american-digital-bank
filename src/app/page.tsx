@@ -443,10 +443,10 @@ export default function HomePage() {
                   <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
                     <Star className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-xl font-bold">American Digit Bank</span>
+                  <span className="text-xl font-bold">American Horizon</span>
                 </div>
                 <p className="text-sm mb-4">
-                  © Copyright 2024 American Digit Bank. All rights reserved. Skyflex
+                  © Copyright 2024 American Horizon. All rights reserved. American Horizon
                   Bank is committed to providing secure and innovative banking
                   solutions.
                 </p>
@@ -515,7 +515,7 @@ export default function HomePage() {
               <div>
                 <h3 className="font-semibold mb-4">Who We Are ?</h3>
                 <p className="text-sm mb-4">
-                  American Digit Bank is a leading financial institution committed to
+                  American Horizon is a leading financial institution committed to
                   providing innovative banking solutions worldwide.
                 </p>
                 <div className="space-y-2 text-sm">
@@ -525,7 +525,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Mail className="w-4 h-4" />
-                    <span>info@skyflexbank.com</span>
+                    <span>info@americanhorizon.com</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4" />

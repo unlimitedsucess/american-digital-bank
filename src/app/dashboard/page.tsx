@@ -38,58 +38,6 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useHttp } from "@/hooks/use-http";
 
-const monthlyData = [
-  { month: "Jan", income: 45000, expenses: 32000 },
-  { month: "Feb", income: 52000, expenses: 28000 },
-  { month: "Mar", income: 48000, expenses: 35000 },
-  { month: "Apr", income: 61000, expenses: 42000 },
-  { month: "May", income: 55000, expenses: 38000 },
-  { month: "Jun", income: 67000, expenses: 45000 },
-];
-
-const recentTransactions = [
-  {
-    id: 1,
-    amount: 5500,
-    type: "Credit",
-    sender: "MEXICO INC ORG",
-    description: "Salary allowance",
-    date: "2024-01-09",
-    time: "16:02",
-    status: "Completed",
-  },
-  {
-    id: 2,
-    amount: 2750,
-    type: "Debit",
-    sender: "Myself",
-    description: "Mechanical serv",
-    date: "2024-01-07",
-    time: "14:21",
-    status: "Completed",
-  },
-  {
-    id: 3,
-    amount: 3900,
-    type: "Debit",
-    sender: "Myself",
-    description: "Refining",
-    date: "2024-01-05",
-    time: "07:22",
-    status: "Completed",
-  },
-  {
-    id: 4,
-    amount: 4250,
-    type: "Debit",
-    sender: "Myself",
-    description: "FLIGHT MAINTENA",
-    date: "2024-01-03",
-    time: "07:14",
-    status: "Completed",
-  },
-];
-
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
@@ -103,7 +51,50 @@ export default function DashboardPage() {
     const timer = setTimeout(() => setIsLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
-  console.log("customerData:", customerData);
+
+
+  // Helper to get month name from Date
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const getMonthlyData = (transactions: any[]) => {
+    const dataByMonth: Record<string, { income: number; expenses: number }> =
+      {};
+
+    transactions.forEach((tx) => {
+      const date = new Date(tx.createdAt);
+      const month = monthNames[date.getMonth()];
+
+      if (!dataByMonth[month]) {
+        dataByMonth[month] = { income: 0, expenses: 0 };
+      }
+
+      if (tx.transactionDirection?.toLowerCase() === "credit") {
+        dataByMonth[month].income += tx.amount || 0;
+      } else {
+        dataByMonth[month].expenses += tx.amount || 0;
+      }
+    });
+
+    // Convert object to array for chart
+    return Object.keys(dataByMonth).map((month) => ({
+      month,
+      income: dataByMonth[month].income,
+      expenses: dataByMonth[month].expenses,
+    }));
+  };
 
   const user = {
     name: `${customerData.userName}`,
@@ -120,63 +111,135 @@ export default function DashboardPage() {
     { label: "Expenses", amount: user.expenses, color: "bg-red-500" },
   ];
 
-  console.log("my username:-----", user.name);
-
   const { sendHttpRequest: userInforHttpRequest } = useHttp();
   const dispatch = useDispatch();
 
   const token = useSelector((state: any) => state.token?.token);
 
+  const Transactions = useSelector(
+    (state: RootState) => state.customer.transactions || []
+  );
+
+  // Define the transfer limit
+  const TRANSFER_LIMIT = 500_000;
+
+  // Get today's date string (YYYY-MM-DD)
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  // Sum of all transactions created today
+  const todaysTransactionsTotal = Transactions.reduce((total, tx) => {
+    const txDateStr = new Date(tx.createdAt).toISOString().split("T")[0];
+    if (txDateStr === todayStr) {
+      return total + (tx.amount || 0);
+    }
+    return total;
+  }, 0);
+
+  // Remaining transfer limit
+  const remainingTransferLimit = TRANSFER_LIMIT - todaysTransactionsTotal;
+
+  dispatch(customerActions.setRemainingTransferLimit(remainingTransferLimit));
+
+  const monthlyData = getMonthlyData(Transactions);
   useEffect(() => {
     if (!token) return;
 
-    const fetchUserSucRes = (res: any) => {
-      const resData = res?.data;
-      console.log("User info response:", resData);
+    const fetchTransactionsSuccess = (res: any) => {
+      // Adjust based on your API structure
+      const transactionsArray = Array.isArray(res?.data?.data)
+        ? res.data.data
+        : [];
+      console.log("Transactions array:", transactionsArray);
+      dispatch(customerActions.setTransactions(transactionsArray));
 
-      const user = resData?.data;
-      console.log("Resolved user:", user);
-
-      // ✅ Save to Redux customer slice
-      dispatch(
-        customerActions.updateCustomerData({
-          email: user?.email,
-          phoneNo: user?.phoneNo,
-          firstName: user?.first_name || user?.firstName,
-          lastName: user?.last_name || user?.lastName,
-          accountNumber: user?.accountNumber,
-          address: user?.address,
-          country: user?.country,
-          city: user?.city,
-          accountType: user?.accountType,
-          userName: user?.userName,
-          pin: user?.pin,
-          expenses: user?.expenses,
-          loan: user?.loan,
-          loanBalance: user?.loanBalance,
-          passportUrl: user?.passportUrl,
-          driversLicence: user?.driversLicence,
-          emailVerified: user?.emailVerified,
-          state: user?.state,
-          createdAt: user?.createdAt,
-          updatedAt: user?.updatedAt,
-          initialDeposit: user?.initialDeposit,
-        })
-      );
+      console.log("Transactions array:", transactionsArray);
     };
 
     userInforHttpRequest({
       requestConfig: {
-        url: "/user",
+        url: "/transaction/history",
         method: "GET",
         token,
         isAuth: true,
-        successMessage: "User info fetched",
+        successMessage: "Transactions fetched",
         userType: "customer",
       },
-      successRes: fetchUserSucRes,
+      successRes: fetchTransactionsSuccess,
     });
   }, [token, dispatch]);
+useEffect(() => {
+  if (!token) return;
+
+  const fetchUserSucRes = (res: any) => {
+    const resData = res?.data;
+    const user = resData?.data;
+
+    // Sometimes backend might return pending with 200 (double check)
+    if (user?.accountStatus === "pending") {
+      console.log("Redirecting because account status is pending...");
+      router.push("/dashboard/account-pending");
+      return;
+    }
+
+    console.log("✅ User fetched:", user?.accountStatus);
+
+    // Save to Redux
+    dispatch(
+      customerActions.updateCustomerData({
+        email: user?.email,
+        phoneNo: user?.phoneNo,
+        firstName: user?.first_name || user?.firstName,
+        lastName: user?.last_name || user?.lastName,
+        accountNumber: user?.accountNumber,
+        address: user?.address,
+        country: user?.country,
+        city: user?.city,
+        accountType: user?.accountType,
+        userName: user?.userName,
+        pin: user?.pin,
+        expenses: user?.expenses,
+        loan: user?.loan,
+        loanBalance: user?.loanBalance,
+        passportUrl: user?.passportUrl,
+        driversLicence: user?.driversLicence,
+        emailVerified: user?.emailVerified,
+        state: user?.state,
+        createdAt: user?.createdAt,
+        updatedAt: user?.updatedAt,
+        initialDeposit: user?.initialDeposit,
+      })
+    );
+  };
+
+  const fetchUserErrRes = (err: any) => {
+    console.error("❌ User info error:", err);
+
+    // ✅ Handle pending in error
+    if (err?.response?.data?.data?.accountStatus === "pending") {
+      console.log("⚠️ Redirecting: account is pending...");
+      router.push("/dashboard/account-pending");
+      return;
+    }
+
+    // Show other errors
+    toast.error(
+      err?.response?.data?.description || "Something went wrong fetching user info"
+    );
+  };
+
+  userInforHttpRequest({
+    requestConfig: {
+      url: "/user",
+      method: "GET",
+      token,
+      isAuth: true,
+      successMessage: "User info fetched",
+      userType: "customer",
+    },
+    successRes: fetchUserSucRes,
+    errorRes: fetchUserErrRes, // ✅ Add this
+  });
+}, [token, dispatch, router]);
 
   return (
     <WireframeLoader isLoading={isLoading}>
@@ -353,20 +416,25 @@ export default function DashboardPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Transfer Limit Remain</span>
-                      <span className="font-semibold">$500000</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-red-500">Last Transaction</span>
-                      <span className="text-red-500 font-semibold">
-                        $495000
+                      <span>Transfer Limit</span>
+                      <span className="font-semibold">
+                        ${TRANSFER_LIMIT.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span></span>
-                      <span className="font-semibold">$5000</span>
+                      <span className="text-red-500">Today's Transactions</span>
+                      <span className="text-red-500 font-semibold">
+                        ${todaysTransactionsTotal.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Remaining Limit</span>
+                      <span className="font-semibold">
+                        ${remainingTransferLimit.toLocaleString()}
+                      </span>
                     </div>
                   </div>
+
                   <div className="flex space-x-2">
                     <Button
                       size="sm"
@@ -434,52 +502,70 @@ export default function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recentTransactions.map((transaction) => (
-                        <tr
-                          key={transaction.id}
-                          className="border-b border-border"
-                        >
-                          <td className="py-3 px-2 text-sm">
-                            {transaction.id}
-                          </td>
-                          <td className="py-3 px-2 text-sm font-semibold">
-                            ${transaction.amount.toLocaleString()}
-                          </td>
-                          <td className="py-3 px-2">
-                            <Badge
-                              variant={
-                                transaction.type === "Credit"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              className={
-                                transaction.type === "Credit"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {transaction.type}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-2 text-sm">
-                            {transaction.sender}
-                          </td>
-                          <td className="py-3 px-2 text-sm">
-                            {transaction.description}
-                          </td>
-                          <td className="py-3 px-2 text-sm">
-                            {transaction.date}
-                          </td>
-                          <td className="py-3 px-2 text-sm">
-                            {transaction.time}
-                          </td>
-                          <td className="py-3 px-2">
-                            <Badge className="bg-blue-100 text-blue-800">
-                              {transaction.status}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
+                      {Array.isArray(Transactions) &&
+                        Transactions.map((transaction, index) => (
+                          <tr
+                            key={transaction.id || index}
+                            className="border-b border-border"
+                          >
+                            <td className="py-3 px-2 text-sm">{index + 1}</td>
+                            <td className="py-3 px-2 text-sm font-semibold">
+                              ${transaction.amount?.toLocaleString()}
+                            </td>
+                            <td className="py-3 px-2">
+                              <Badge
+                                variant={
+                                  transaction.transactionDirection?.toLowerCase() ===
+                                  "credit"
+                                    ? "default"
+                                    : "secondary"
+                                }
+                                className={
+                                  transaction.transactionDirection?.toLowerCase() ===
+                                  "credit"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }
+                              >
+                                {transaction.transactionDirection
+                                  ?.charAt(0)
+                                  .toUpperCase() +
+                                  transaction.transactionDirection?.slice(1)}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-2 text-sm">
+                              {transaction.recipientName ||
+                                transaction.recipientName ||
+                                "-"}
+                            </td>
+                            <td className="py-3 px-2 text-sm">
+                              {transaction.description || "-"}
+                            </td>
+                            <td className="py-3 px-2 text-sm">
+                              {transaction.createdAt
+                                ? new Date(
+                                    transaction.createdAt
+                                  ).toLocaleDateString()
+                                : "-"}
+                            </td>
+                            <td className="py-3 px-2 text-sm">
+                              {transaction.createdAt
+                                ? new Date(
+                                    transaction.createdAt
+                                  ).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "-"}
+                            </td>
+
+                            <td className="py-3 px-2">
+                              <Badge className="bg-blue-100 text-blue-800">
+                                {transaction.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>

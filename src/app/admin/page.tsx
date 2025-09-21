@@ -2,8 +2,85 @@
 
 import DashboardWrapper from "@/components/admin/DashBoradWrapper";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { RootState } from "@/store";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { setAdminData, setLoading, setError } from "@/store/data/admin-slice";
+import { useHttp } from "@/hooks/use-http";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
 
 export default function AdminDashboardPage() {
+  
+  const router = useRouter();
+ 
+  const { sendHttpRequest: userInforHttpRequest } = useHttp();
+  const dispatch = useDispatch();
+ 
+
+  const token = useSelector((state: any) => state.token?.token);
+  const AdminData = useSelector(
+    (state: RootState) => state.admin
+  );
+
+console.log("Admin Redux State:", AdminData);
+
+const pendingUsers = AdminData.users.filter(user => user.accountStatus
+ === 'pending');
+const activeUsers = AdminData.users.filter(user => user.accountStatus
+ === 'active');
+
+const suspendedUsers = AdminData.users.filter(user => user.accountStatus
+ === 'suspended');
+
+ const loanRequests = AdminData.loans.filter(loan => loan.status === 'pending');
+ const approvedLoans = AdminData.loans.filter(loan => loan.status === 'approved');
+ const rejectedLoans = AdminData.loans.filter(loan => loan.status === 'rejected');
+ const overdueLoans = AdminData.loans.filter(loan => loan.status === 'overdue');
+const totalLoans = AdminData.loans.length;
+
+  useEffect(() => {
+    if (!token) {
+      toast.error("No auth token found for admin.");
+      router.push("/adminlogin");
+
+    };
+
+    dispatch(setLoading(true));
+
+    userInforHttpRequest({
+      requestConfig: {
+        url: "/admin/info", // ✅ endpoint that returns users, transactions, loans, cards
+        method: "GET",
+        token,
+        isAuth: true,
+        successMessage: "Admin details fetched",
+        userType: "admin",
+      },
+      successRes: (res: any) => {
+        const resData = res?.data?.data;
+        console.log("Admin API response:", resData);
+
+        // ✅ Save full admin dataset into redux
+        dispatch(
+          setAdminData({
+            users: resData?.users,
+            transactions: resData?.transactions,
+            loans: resData?.loans,
+            cards: resData?.cards,
+          })
+        );
+
+        dispatch(setLoading(false));
+      },
+      errorRes: (err: any) => {
+        dispatch(setError(err.message || "Failed to fetch admin details"));
+        dispatch(setLoading(false));
+      },
+    });
+  }, [token, dispatch]);
+
   return (
     <DashboardWrapper>
       <div className="w-full">
@@ -16,7 +93,7 @@ export default function AdminDashboardPage() {
               <CardTitle>Pending Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">12</p>
+              <p className="text-2xl font-bold">{pendingUsers.length}</p>
             </CardContent>
           </Card>
 
@@ -25,7 +102,7 @@ export default function AdminDashboardPage() {
               <CardTitle>Active Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">256</p>
+              <p className="text-2xl font-bold">{activeUsers.length}</p>
             </CardContent>
           </Card>
 
@@ -34,7 +111,9 @@ export default function AdminDashboardPage() {
               <CardTitle>Suspended Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">8</p>
+              <p className="text-2xl font-bold">
+                {suspendedUsers.length}
+              </p>
             </CardContent>
           </Card>
 
@@ -43,7 +122,7 @@ export default function AdminDashboardPage() {
               <CardTitle>Total Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">276</p>
+              <p className="text-2xl font-bold">{AdminData.users.length}</p>
             </CardContent>
           </Card>
         </div>
@@ -55,7 +134,7 @@ export default function AdminDashboardPage() {
               <CardTitle>Loan Requests</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">15</p>
+              <p className="text-2xl font-bold">{loanRequests.length}</p>
             </CardContent>
           </Card>
 
@@ -64,7 +143,7 @@ export default function AdminDashboardPage() {
               <CardTitle>Approved Loans</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">42</p>
+              <p className="text-2xl font-bold">{approvedLoans.length}</p>
             </CardContent>
           </Card>
 
@@ -73,7 +152,9 @@ export default function AdminDashboardPage() {
               <CardTitle>Rejected Loans</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">6</p>
+              <p className="text-2xl font-bold">
+                {rejectedLoans.length}
+              </p>
             </CardContent>
           </Card>
 
@@ -82,40 +163,14 @@ export default function AdminDashboardPage() {
               <CardTitle>Total Loans</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">63</p>
+              <p className="text-2xl font-bold">
+                {totalLoans}
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* ===== Transactions Summary ===== */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Deposits</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">$1,240,000</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Debits</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">$845,000</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Net Balance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">$395,000</p>
-            </CardContent>
-          </Card>
-        </div>
+       
 
         {/* ===== Recent Activity ===== */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

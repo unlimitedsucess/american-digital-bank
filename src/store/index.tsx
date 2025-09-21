@@ -4,8 +4,10 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 
+
 import tokenReducer from "@/store/token/token-slice";
 import customerReducer from "@/store/data/customer-slice"; 
+import adminReducer from "@/store/data/admin-slice";
 
 // Persist config for token
 const tokenPersistConfig = {
@@ -19,9 +21,15 @@ const customerPersistConfig = {
   storage,
 };
 
+const adminPersistConfig = {
+  key: "admin",
+  storage,
+};
+
 const rootReducer = combineReducers({
   token: persistReducer(tokenPersistConfig, tokenReducer.reducer),
-  customer: persistReducer(customerPersistConfig, customerReducer), // added customer slice
+  customer: persistReducer(customerPersistConfig, customerReducer),
+    admin: persistReducer(adminPersistConfig, adminReducer),
 });
 
 const store = configureStore({

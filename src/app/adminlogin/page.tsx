@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { tokenActions } from "@/store/token/token-slice";
+import { useHttp } from "@/hooks/use-http";
+import { useDispatch } from "react-redux";
+import { AdminLoginParams, LoginParams } from "@/types/global";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 /**
  * Demo dev credential (only for local/dev/testing):
@@ -30,100 +36,87 @@ export default function AdminLoginPage() {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Simple client-side validators
-  const validate = () => {
-    if (!emailOrUsername.trim()) {
-      setError("Please enter your username or email.");
-      return false;
-    }
-    if (!password) {
-      setError("Please enter your password.");
-      return false;
-    }
-    // optional: require minimal password length for client side
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return false;
-    }
-    setError(null);
-    return true;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
-  // Simulated login (replace with real server call)
-  const simulatedLogin = async (identifier: string, pwd: string) => {
-    // small delay to simulate network
-    await new Promise((r) => setTimeout(r, 700));
+  const [formData, setFormData] = useState<AdminLoginParams>({
+    userName: "",
+    password: "",
+    rememberMe: false,
+  });
 
-    // Accept either exact email or 'admin' as username for demo
-    const matchesDemo =
-      (identifier.toLowerCase() === DEMO_CREDENTIAL.email ||
-        identifier.toLowerCase() === "admin") &&
-      pwd === DEMO_CREDENTIAL.password;
+  const dispatch = useDispatch();
 
-    if (matchesDemo) {
-      // return demo token/user
-      return {
-        ok: true,
-        user: { id: "admin-1", name: "Administrator", email: DEMO_CREDENTIAL.email },
-        token: "demo-token-123",
-      };
+  const { loading, sendHttpRequest: loginRequest } = useHttp();
+
+  const loginSuccess = (res: any) => {
+    const accessToken = res?.data?.data?.token;
+
+    if (!accessToken) {
+      toast.error("Login failed: No token received.");
+      return;
     }
 
-    // else fail
-    return { ok: false, message: "Invalid username or password." };
+    dispatch(tokenActions.setToken(accessToken));
+
+    if (formData.rememberMe) {
+      localStorage.setItem(
+        "AdminstoredLogin", // 👈 distinct key for admin
+        JSON.stringify({
+          userName: formData.userName, // 👈 correct field
+          token: accessToken,
+        })
+      );
+    } else {
+      localStorage.removeItem("AdminstoredLogin");
+    }
+
+    toast.success("Login successful!");
+    router.push("/admin");
   };
 
-  // Example server call (uncomment & implement on server)
-  /*
-  const serverLogin = async (identifier: string, pwd: string) => {
-    const res = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier, password: pwd, remember }),
-      credentials: "include" // if your API sets cookies
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation
+    if (!formData.userName || !formData.password) {
+      toast.error("Please fill in all fields!");
+      return;
+    }
+
+    // Login request
+    loginRequest({
+      requestConfig: {
+        url: "/admin/signin",
+        method: "POST",
+        body: {
+          userName: formData.userName,
+          password: formData.password,
+        },
+        userType: "customer",
+        successMessage: "Login successful!",
+      },
+      successRes: loginSuccess,
     });
-    return res.json(); // expected { ok: true, user, token } or { ok: false, message }
   };
-  */
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!validate()) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Swap simulatedLogin with serverLogin when you have a backend
-      const res = await simulatedLogin(emailOrUsername.trim(), password);
-
-      if (!res.ok) {
-        setError(res.message || "Login failed");
-        setLoading(false);
-        return;
-      }
-
-      // On success:
-      // - store token safely (httpOnly cookie from server is preferred)
-      // - or localStorage if required for demo (not recommended for prod tokens)
-      if (remember) {
-        try {
-          localStorage.setItem("demo_admin_token", res.token);
-        } catch {}
-      }
-
-      // Redirect to admin dashboard (replace path with your route)
-      router.push("/admin");
-    } catch (err) {
-      console.error(err);
-      setError("An unexpected error occurred.");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    const AdminstoredLogin = localStorage.getItem("AdminstoredLogin");
+    if (AdminstoredLogin) {
+      const parsed = JSON.parse(AdminstoredLogin);
+      setFormData((prev) => ({
+        ...prev,
+        userName: parsed.userName, // 👈 restore properly
+        rememberMe: true,
+      }));
+      dispatch(tokenActions.setToken(parsed.token));
     }
-  };
+  }, [dispatch]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -135,13 +128,13 @@ export default function AdminLoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="identifier">Email or Username</Label>
+              <Label htmlFor="userName"> Username</Label>
               <Input
-                id="identifier"
-                name="identifier"
+                id="userName"
+                name="userName"
                 placeholder="admin@example.com"
-                value={emailOrUsername}
-                onChange={(e) => setEmailOrUsername(e.target.value)}
+                value={formData.userName}
+                onChange={handleInputChange}
                 aria-label="email or username"
                 autoComplete="username"
                 className="mt-1"
@@ -156,8 +149,8 @@ export default function AdminLoginPage() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleInputChange}
                   aria-label="password"
                   autoComplete="current-password"
                 />
@@ -194,23 +187,10 @@ export default function AdminLoginPage() {
               </a>
             </div>
 
-            {error && (
-              <div role="alert" className="text-sm text-red-600">
-                {error}
-              </div>
-            )}
-
             <div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
+                {loading ? <LoadingSpinner /> : "Sign in"}
               </Button>
-            </div>
-
-            <div className="text-xs text-muted-foreground text-center mt-2">
-              <div>Demo credential for local testing:</div>
-              <div>
-                <code>admin@example.com</code> / <code>AdminPass123!</code>
-              </div>
             </div>
           </form>
         </CardContent>

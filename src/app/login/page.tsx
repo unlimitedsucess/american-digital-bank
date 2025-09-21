@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { SkyflexLogo } from "@/components/skyflex-logo"
+import { AmericanHLogo } from "@/components/skyflex-logo"
 import { WireframeLoader } from "@/components/wireframe-loader"
 import { Eye, EyeOff, Shield, Lock, User, ArrowRight } from "lucide-react"
 import Link from "next/link"
@@ -53,23 +53,33 @@ export default function LoginPage() {
 
   const { loading, sendHttpRequest: loginRequest } = useHttp();
 
-  const loginSuccess = (res: any) => {
-    // backend sends { access: "..." }
-    const accessToken = res?.data?.data?.token;
-    console.log("Full response:", res);
-    console.log("Access token:", accessToken);
+ const loginSuccess = (res: any) => {
+  const accessToken = res?.data?.data?.token;
 
-    if (!accessToken) {
-      toast.error("Login failed: No token received.");
-      return;
-    }
+  if (!accessToken) {
+    toast.error("Login failed: No token received.");
+    return;
+  }
 
-   
-    dispatch(tokenActions.setToken(accessToken));
+  dispatch(tokenActions.setToken(accessToken));
 
-  
-    router.push("/dashboard");
-  };
+  // Save login details if rememberMe is true
+  if (formData.rememberMe) {
+    localStorage.setItem(
+      "loginData",
+      JSON.stringify({
+        email: formData.email,
+        token: accessToken,
+      })
+    );
+  } else {
+    // Clear storage if unchecked
+    localStorage.removeItem("loginData");
+  }
+
+  toast.success("Login successful!");
+  router.push("/dashboard");
+};
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,8 +126,8 @@ export default function LoginPage() {
             className="text-white space-y-8 text-center lg:text-left"
           >
             <div className="flex items-center justify-center lg:justify-start space-x-4">
-              <SkyflexLogo size="lg" className="text-white" />
-              <h1 className="text-4xl font-bold">American Digit Bank</h1>
+              <AmericanHLogo size="lg" className="text-white" />
+              <h1 className="text-4xl font-bold">American Horizon</h1>
             </div>
             <div className="space-y-4">
               <h2 className="text-3xl font-bold">Welcome Back</h2>
@@ -215,7 +225,7 @@ export default function LoginPage() {
                   <Button
                     type="submit"
                     className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                    disabled={ loading || isFormValid}
+                    disabled={ loading}
                   >
                     {loading? (
                       <motion.div
@@ -237,7 +247,7 @@ export default function LoginPage() {
                       <div className="w-full border-t border-border" />
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="bg-card px-4 text-muted-foreground">New to American Digit Bank?</span>
+                      <span className="bg-card px-4 text-muted-foreground">New to American Horizon?</span>
                     </div>
                   </div>
                   <Button variant="outline" className="w-full h-12 bg-transparent" asChild>

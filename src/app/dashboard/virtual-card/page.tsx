@@ -1,102 +1,144 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { WireframeLoader } from "@/components/wireframe-loader";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-interface Card {
-  id: number;
-  type: "Visa" | "MasterCard" | "Verve" | "Discover";
-  number: string;
-  holder: string;
-  status: "active" | "old" | "pending"; 
-}
+import { toast } from "sonner";
+import { useDispatch, useSelector } from "react-redux";
+import { useHttp } from "@/hooks/use-http";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { customerActions } from "@/store/data/customer-slice";
+import { Card, ApplyedCard } from "@/types/global";
+import { RootState } from "@/store";
 
 const cardOptions = [
-  { name: "Visa", charge: 5 },
-  { name: "MasterCard", charge: 7 },
-  { name: "Verve", charge: 6 },
-  { name: "Discover", charge: 6 },
+  { name: "visa", charge: 5 },
+  { name: "master", charge: 7 },
+  { name: "verve", charge: 6 },
 ];
 
-// Example PIN (in real app, verify server-side)
-const USER_PIN = "1234";
-
-// Card logos omitted for brevity; use your existing CardLogo component
+// ✅ Replace with your styled CardLogo
 const CardLogo = ({ type }: { type: string }) => <div>{type}</div>;
 
 export default function CardPage() {
-  const [cards, setCards] = useState<Card[]>([
-    { id: 1, type: "Visa", number: "**** **** **** 1234", holder: "John Doe", status: "old" },
-    { id: 2, type: "MasterCard", number: "**** **** **** 5678", holder: "Jane Smith", status: "active" },
-  ]);
+  const token = useSelector((state: any) => state.token?.token);
+  const cards = useSelector((state: any) => state.customer.cards);
+  const customerData = useSelector(
+    (state: RootState) => state.customer.customerData
+  );
 
-  const [applyingCard, setApplyingCard] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [pinModal, setPinModal] = useState<{ type: "apply" | "block"; cardId?: number; cardName?: string } | null>(null);
+  const formatExpiry = (dateString: string) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(-2); // last 2 digits
+    return `${month}/${year}`;
+  };
+
+  const dispatch = useDispatch();
+
+  const [pinModal, setPinModal] = useState<{
+    type: "apply";
+    cardName?: string;
+  } | null>(null);
   const [enteredPin, setEnteredPin] = useState("");
+  const [formData, setFormData] = useState<ApplyedCard>({
+    pin: "",
+    cardType: "",
+  });
 
-  const blockCard = (id: number) => {
-    setCards(cards.map(c => (c.id === id ? { ...c, status: c.status === "active" ? "old" : c.status } : c)));
-  };
+  const { loading, sendHttpRequest: CardRequest } = useHttp();
+  const { sendHttpRequest: userInforHttpRequest } = useHttp();
 
-  const cancelPendingCard = (id: number) => {
-    setCards(cards.filter(c => c.id !== id));
-  };
-
+  // ✅ Handle new card apply
   const handleApply = (name: string) => {
-    const hasThisType = cards.some(c => c.type === name && (c.status === "active" || c.status === "pending"));
-    if (hasThisType) {
-      alert(`You already have a ${name} card active or pending. Cancel it first to apply a new one.`);
-      return;
-    }
+    setFormData((prev) => ({ ...prev, cardType: name }));
     setPinModal({ type: "apply", cardName: name });
   };
 
-  const handleBlock = (id: number) => {
-    setPinModal({ type: "block", cardId: id });
-  };
+  // ✅ Submit new card creation
+  const handleSubmit = (pinValue: string) => {
+    const submissionData = { ...formData, pin: pinValue };
 
-  const confirmPin = () => {
-    if (enteredPin !== USER_PIN) {
-      alert("Incorrect PIN!");
+    if (!submissionData.pin || !submissionData.cardType) {
+      toast.error("Please fill in all fields!");
       return;
     }
 
-    if (pinModal?.type === "apply" && pinModal.cardName) {
-      const newCard: Card = {
-        id: Date.now(),
-        type: pinModal.cardName as Card["type"],
-        number: "**** **** **** 9999",
-        holder: "New Card Holder",
-        status: "pending",
-      };
-      setCards(prev => {
-        const updated = [...prev, newCard];
-        return updated.length > 4 ? updated.slice(updated.length - 4) : updated;
-      });
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 5000);
-    }
+    CardRequest({
+      requestConfig: {
+        url: "card/create",
+        method: "POST",
+        body: submissionData,
+        token,
+        isAuth: true,
+        successMessage: "Successful",
+      },
+      successRes: () => {
+        toast.success("Card created successfully!");
+        setPinModal(null);
+        setEnteredPin("");
 
-    if (pinModal?.type === "block" && pinModal.cardId) {
-      blockCard(pinModal.cardId);
-    }
-
-    setEnteredPin("");
-    setPinModal(null);
+        // 🔄 Refresh card list after creation
+        fetchCards();
+      },
+    });
   };
 
+  // ✅ Fetch cards from server
+  const fetchCards = () => {
+    userInforHttpRequest({
+      requestConfig: {
+        url: "card/all",
+        method: "GET",
+        token,
+        isAuth: true,
+      },
+      successRes: (res: any) => {
+        const resData = res?.data;
+        console.log("User info response:", resData);
+
+        const user = resData?.data;
+        console.log("Resolved user:", user);
+
+        // ✅ Save to Redux customer sliceA
+
+        const mappedCards: Card[] = user.map((c: any) => ({
+          _id: c._id,
+          userId: c.userId,
+          cardType: c.cardType,
+          pin: c.pin,
+          ccv: c.ccv,
+          expiryDate: c.expiryDate,
+          cardNumber: c.cardNumber || "**** **** **** 1234",
+          holder: c.holder || "Card Holder",
+          status: c.status || "active",
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+        }));
+
+        dispatch(customerActions.setCards(mappedCards));
+      },
+    });
+  };
+
+  useEffect(() => {
+    if (token) fetchCards();
+  }, [token]);
+
   const getCardStyle = (type: string) => {
-    switch (type) {
-      case "Visa": return "bg-gradient-to-r from-blue-500 to-blue-700 text-white";
-      case "MasterCard": return "bg-gradient-to-r from-red-500 to-yellow-400 text-white";
-      case "Verve": return "bg-gradient-to-r from-purple-600 to-pink-500 text-white";
-      case "Discover": return "bg-gradient-to-r from-orange-500 to-yellow-300 text-white";
-      default: return "bg-gray-300";
+    switch (type.toLowerCase()) {
+      case "visa":
+        return "bg-gradient-to-r from-blue-500 to-blue-700 text-white";
+      case "mastercard":
+        return "bg-gradient-to-r from-red-500 to-yellow-400 text-white";
+      case "verve":
+        return "bg-gradient-to-r from-purple-600 to-pink-500 text-white";
+      default:
+        return "bg-gray-300";
     }
   };
 
@@ -106,100 +148,163 @@ export default function CardPage() {
         <div className="p-6 space-y-6">
           <h1 className="text-2xl font-bold">My Cards</h1>
 
+          {/* ✅ Render fetched cards */}
           <div className="grid md:grid-cols-2 gap-6">
-            {cards.map(card => (
-              <motion.div
-                key={card.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`relative rounded-xl shadow-lg p-6 min-h-[180px] flex flex-col justify-between ${getCardStyle(card.type)}`}
-              >
-                <div className="absolute top-4 right-4">
-                  <CardLogo type={card.type} />
-                </div>
+            {cards.length === 0 ? (
+              <p className="text-gray-500">No cards found.</p>
+            ) : (
+              cards.map((card: Card) => {
+                const expiryDate = new Date(card.expiryDate);
+                const isExpired = expiryDate < new Date();
 
-                <div className="mt-6 text-xl font-mono tracking-widest">{card.number}</div>
-                <div className="text-sm font-semibold mt-2">{card.holder}</div>
+                // ✅ local UI-only status
+                type EffectiveStatus = "active" | "diactived" | "expired";
+                const effectiveStatus: EffectiveStatus = isExpired
+                  ? "expired"
+                  : (card.status as EffectiveStatus);
 
-                {card.status === "active" && (
-                  <Button
-                    variant="destructive"
-                    className="mt-4 self-start"
-                    onClick={() => handleBlock(card.id)}
+                const handleBlock = (cardId: string) => {
+                  userInforHttpRequest({
+                    requestConfig: {
+                      url: "/card/update",
+                      method: "PATCH",
+                      token,
+                      isAuth: true,
+                      body: { status: "de-activated", cardId },
+                      successMessage: "Card blocked successfully",
+                    },
+                    successRes: () => {
+                      fetchCards();
+                      toast.success("Card blocked successfully");
+                    },
+                  });
+                };
+
+                return (
+                  <motion.div
+                    key={card._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`relative rounded-xl shadow-lg p-6 min-h-[220px] flex flex-col justify-between ${getCardStyle(
+                      card.cardType
+                    )}`}
                   >
-                    Block Card
-                  </Button>
-                )}
+                    {/* ✅ Show Status at Top Left */}
+                    <div className="absolute top-4 left-4 text-xs font-bold uppercase">
+                      <span
+                        className={
+                          effectiveStatus === "active"
+                            ? "text-green-400"
+                            : effectiveStatus === "expired"
+                            ? "text-red-400"
+                            : "text-gray-400"
+                        }
+                      >
+                        {effectiveStatus}
+                      </span>
+                    </div>
 
-                {card.status === "pending" && (
-                  <div className="mt-4 flex items-center gap-2">
-                    <span className="inline-block text-yellow-200 font-semibold bg-yellow-600 px-3 py-1 rounded">
-                      Pending Approval
-                    </span>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => cancelPendingCard(card.id)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </motion.div>
-            ))}
+                    {/* ✅ Card logo */}
+                    <div className="absolute top-4 right-4">
+                      <CardLogo type={card.cardType} />
+                    </div>
+
+                    {/* Card number */}
+                    <div className="mt-6 text-xl font-mono tracking-widest">
+                      {card.cardNumber}
+                    </div>
+
+                    {/* Holder */}
+                    <div className="text-sm font-semibold mt-2">
+                      {`${customerData.firstName} ${customerData.lastName}`}
+                    </div>
+
+                    {/* Expiry + CCV */}
+                    <div className="text-xs mt-1">
+                      Exp: {formatExpiry(card.expiryDate)} | CCV: {card.ccv}
+                    </div>
+
+                    {/* ✅ Block Button */}
+                    <div className="mt-4">
+                      <Button
+                        variant="destructive"
+                        disabled={effectiveStatus !== "active"} // only enabled if active
+                        onClick={() => handleBlock(card._id)}
+                      >
+                        {loading ? (
+                          <LoadingSpinner />
+                        ) : card.status !== "active" ? (
+                          "Blocked"
+                        ) : (
+                          "Block Card"
+                        )}
+                      </Button>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
           </div>
 
+          {/* ✅ Apply for new card */}
           <div className="mt-8">
             <h2 className="text-xl font-semibold mb-2">Apply for New Card</h2>
             <div className="flex flex-wrap gap-4">
-              {cardOptions.map(option => {
-                const isDisabled = cards.some(c => c.type === option.name && (c.status === "active" || c.status === "pending"));
-                return (
-                  <motion.div
-                    key={option.name}
-                    whileHover={{ scale: isDisabled ? 1 : 1.05 }}
-                    className={`p-4 border rounded-lg shadow cursor-pointer flex flex-col items-center bg-white ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                    onClick={() => !isDisabled && handleApply(option.name)}
-                  >
-                    <CardLogo type={option.name} />
-                    <h3 className="font-medium mt-1">{option.name}</h3>
-                    <p className="text-sm">Charge: ${option.charge}</p>
-                  </motion.div>
-                );
-              })}
+              {cardOptions.map((option) => (
+                <motion.div
+                  key={option.name}
+                  whileHover={{ scale: 1.05 }}
+                  className={`p-4 border rounded-lg shadow cursor-pointer flex flex-col items-center bg-white`}
+                  onClick={() => handleApply(option.name)}
+                >
+                  <CardLogo type={option.name} />
+                  <p className="text-sm">Charge: ${option.charge}</p>
+                </motion.div>
+              ))}
             </div>
           </div>
 
-          {showSuccess && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 p-4 bg-green-100 text-green-800 rounded"
-            >
-              Successful! Your new card is under review. It will be active in 24 hrs.
-            </motion.div>
-          )}
-
-          {/* PIN Modal */}
+          {/* ✅ PIN Modal */}
           {pinModal && (
             <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
               <div className="bg-white p-6 rounded-lg w-80 flex flex-col gap-4">
-                <h3 className="text-lg font-semibold">Enter your 4-digit PIN</h3>
+                <h3 className="text-lg font-semibold">
+                  Enter your 4-digit PIN
+                </h3>
                 <Input
                   type="password"
                   maxLength={4}
                   value={enteredPin}
-                  onChange={e => setEnteredPin(e.target.value)}
+                  onChange={(e) => setEnteredPin(e.target.value)}
                   className="text-center text-xl tracking-widest"
                 />
+
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => { setPinModal(null); setEnteredPin(""); }}>Cancel</Button>
-                  <Button onClick={confirmPin}>Confirm</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setPinModal(null);
+                      setEnteredPin("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    disabled={loading}
+                    onClick={() => {
+                      if (enteredPin.length < 4) {
+                        toast.error("Please enter your 4-digit PIN");
+                        return;
+                      }
+                      handleSubmit(enteredPin);
+                    }}
+                  >
+                    {loading ? <LoadingSpinner /> : "Confirm"}
+                  </Button>
                 </div>
               </div>
             </div>
           )}
-
         </div>
       </DashboardSidebar>
     </WireframeLoader>

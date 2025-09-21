@@ -47,7 +47,7 @@ const leadership = [
     name: "Sarah Johnson",
     position: "Chief Executive Officer",
     image: "/professional-woman-ceo.png",
-    bio: "With over 20 years in banking, Sarah leads American Digit Bank's vision for innovative financial services.",
+    bio: "With over 20 years in banking, Sarah leads American Horizon's vision for innovative financial services.",
   },
   {
     name: "Michael Chen",
@@ -85,7 +85,7 @@ export default function AboutPage() {
               transition={{ duration: 0.8 }}
               className="text-center"
             >
-              <h1 className="text-5xl font-bold mb-6">About American Digit Bank</h1>
+              <h1 className="text-5xl font-bold mb-6">About American Horizon</h1>
               <p className="text-xl max-w-3xl mx-auto text-pretty">
                 Empowering financial futures through innovative banking solutions, trusted partnerships, and unwavering
                 commitment to our customers' success.
@@ -187,7 +187,7 @@ export default function AboutPage() {
             >
               <h2 className="text-4xl font-bold mb-4">Leadership Team</h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Meet the experienced professionals leading American Digit Bank into the future
+                Meet the experienced professionals leading American Horizon into the future
               </p>
             </motion.div>
 
@@ -227,9 +227,9 @@ export default function AboutPage() {
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl font-bold text-accent-foreground mb-6">Ready to Experience American Digit Banking?</h2>
+              <h2 className="text-3xl font-bold text-accent-foreground mb-6">Ready to Experience American Horizoning?</h2>
               <p className="text-xl text-accent-foreground mb-8 max-w-2xl mx-auto">
-                Join thousands of satisfied customers who trust American Digit Bank for their financial needs.
+                Join thousands of satisfied customers who trust American Horizon for their financial needs.
               </p>
               <Button size="lg" className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
                 Open Your Account Today
