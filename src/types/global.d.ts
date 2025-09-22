@@ -477,8 +477,9 @@ export type DomesticTransfer = {
 };
 export type loanApplication = {
   loanAmount: number;
-  loanDuraion: string;
+  loanDuration: string;
   pin: string;
+  description: string;
 };
 export interface CustomerSliceParams {
   customerData: Data;
@@ -663,11 +664,14 @@ interface Transaction {
 
 interface Loan {
   _id: string;
-  loanDuraion: string;
+ 
   status: string;
   loanAmount: number;
-  createdAt: string;
-  updatedAt: string;
+  loanBalance: number;
+  interestAmount: number;
+  lastInterestAppliedDate:string;
+  activationDate
+
   id: string;
   userId: {
     _id: string;

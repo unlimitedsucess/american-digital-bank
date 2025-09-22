@@ -13,11 +13,17 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { RootState } from "@/store";
 
 export default function LoanPage() {
  
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState(["", "", "", ""]); // 4-digit pin array
+
+    const customerData = useSelector(
+      (state: RootState) => state.customer.customerData
+    );
+
 
   const [submitted, setSubmitted] = useState(false);
   const token = useSelector((state: any) => state.token?.token);
@@ -33,11 +39,12 @@ export default function LoanPage() {
     };
 
   const [formData, setFormData] = useState<loanApplication>({
-    loanDuraion: "",
+    loanDuration: "",
     loanAmount: 0,
     pin: "",
+    description: ""
   });
-  const selectedDuration = durationOptions[formData.loanDuraion];
+  const selectedDuration = durationOptions[formData.loanDuration];
   const interestRate = selectedDuration?.interest || 0;
 
   // Total repayment (simple interest)
@@ -55,7 +62,7 @@ export default function LoanPage() {
   };
 
   const handleSubmit = (pinValue: string) => {
-    if (!formData.loanDuraion || !formData.loanAmount) {
+    if (!formData.loanDuration || !formData.loanAmount) {
       toast.error("Please fill in all fields!");
       return;
     }
@@ -72,13 +79,16 @@ export default function LoanPage() {
         successMessage: " Successful",
       },
       successRes: () => {
-        toast.success("Transfer successful!");
+        toast.success("Loan Submission successful!");
 
         setShowPinModal(false);
         setSubmitted(true);
       },
     });
+
+    console.log("Loan Application Data:", submissionData);
   };
+
 
   return (
     <WireframeLoader isLoading={false}>
@@ -100,7 +110,7 @@ export default function LoanPage() {
               Outstanding Loan
             </h2>
             <p className="text-gray-600 mt-2">
-              You currently have <span className="font-bold">$5,000</span>{" "}
+              You currently have <span className="font-bold">{customerData?.loanBalance}</span>{" "}
               outstanding balance.
             </p>
           </motion.div>
@@ -140,6 +150,19 @@ export default function LoanPage() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600">
+                    Reason for Loan
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.description}
+                    onChange={(e) => handleChange("description", e.target.value)}
+                    className="w-full mt-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:ring-blue-400"
+                    placeholder="Enter reason for loan"
+                    required
+                  />
+                </div>
 
                 {/* Loan Duration */}
                 <div>
@@ -147,12 +170,13 @@ export default function LoanPage() {
                     Duration
                   </label>
                   <select
-                    value={formData.loanDuraion}
+                    value={formData.loanDuration}
                     onChange={(e) =>
-                      handleChange("loanDuraion", e.target.value)
+                      handleChange("loanDuration", e.target.value)
                     }
                     className="w-full mt-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:ring-blue-400"
                   >
+                    <option value="">Select duration</option>
                     <option value="1month_5">1 Month (5%)</option>
                     <option value="2month_8">2 Months (8%)</option>
                     <option value="3month_10">3 Months (10%)</option>

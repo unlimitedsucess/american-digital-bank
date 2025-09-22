@@ -31,9 +31,7 @@ const DEMO_CREDENTIAL = {
 export default function AdminLoginPage() {
   const router = useRouter();
 
-  const [emailOrUsername, setEmailOrUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,8 +167,10 @@ export default function AdminLoginPage() {
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <Checkbox
                   id="remember"
-                  checked={remember}
-                  onCheckedChange={(v) => setRemember(Boolean(v))}
+                  checked={formData.rememberMe}
+                  onCheckedChange={(v) =>
+                    setFormData((prev) => ({ ...prev, rememberMe: Boolean(v) }))
+                  }
                 />
                 <span className="text-sm">Remember me</span>
               </label>

@@ -55,6 +55,13 @@ export const useHttp = () => {
           validateStatus: (status: number) => status >= 200 && status < 300,
         };
 
+        console.log("Axios Base URL:", axios.defaults.baseURL);
+        console.log("Final Axios Request Config:", config);
+        console.log(
+          "Full URL:",
+          `${axios.defaults.baseURL?.replace(/\/$/, "")}${config.url}`
+        );
+
         const res = await axios.request(config);
 
         if (res.status >= 200 && res.status < 300) {

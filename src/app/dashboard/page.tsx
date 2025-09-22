@@ -37,6 +37,7 @@ import {
 } from "recharts";
 import { useDispatch, useSelector } from "react-redux";
 import { useHttp } from "@/hooks/use-http";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -182,6 +183,7 @@ useEffect(() => {
     }
 
     console.log("✅ User fetched:", user?.accountStatus);
+    console.log("Full user data:", user);
 
     // Save to Redux
     dispatch(
@@ -239,7 +241,13 @@ useEffect(() => {
     successRes: fetchUserSucRes,
     errorRes: fetchUserErrRes, // ✅ Add this
   });
+
+
+  console.log("Fetching user info...", );
 }, [token, dispatch, router]);
+
+
+
 
   return (
     <WireframeLoader isLoading={isLoading}>
@@ -347,7 +355,7 @@ useEffect(() => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 "
           >
             {summaryData.map((item, index) => (
               <Card key={item.label}>

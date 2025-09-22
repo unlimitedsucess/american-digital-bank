@@ -37,7 +37,7 @@ const suspendedUsers = AdminData.users.filter(user => user.accountStatus
  const loanRequests = AdminData.loans.filter(loan => loan.status === 'pending');
  const approvedLoans = AdminData.loans.filter(loan => loan.status === 'approved');
  const rejectedLoans = AdminData.loans.filter(loan => loan.status === 'rejected');
- const overdueLoans = AdminData.loans.filter(loan => loan.status === 'overdue');
+
 const totalLoans = AdminData.loans.length;
 
   useEffect(() => {
