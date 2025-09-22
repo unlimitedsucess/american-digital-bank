@@ -176,7 +176,7 @@ export default function ResetPasswordPage() {
                 type="submit"
                 className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90"
                 disabled={loading || apiLoading}
-              >
+              >      
                 {loading || apiLoading ? (
                   <motion.div
                     animate={{ rotate: 360 }}
