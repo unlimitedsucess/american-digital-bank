@@ -144,7 +144,6 @@ export default function RegisterPage() {
       setPasswordChecks(newChecks);
     }
   };
-
   const handleSelectChange = (name: string, value: string) => {
     if (name === "country") {
       const country = Country.getAllCountries().find((c) => c.name === value);
@@ -156,8 +155,18 @@ export default function RegisterPage() {
           state: "", // reset state
           city: "", // reset city
         }));
+
         setSelectedCountry(country.isoCode);
-        setStates(State.getStatesOfCountry(country.isoCode));
+
+        // Get all states but filter out territories/islands
+        const validStates = State.getStatesOfCountry(country.isoCode).filter(
+          (s) =>
+            !/island|territory|atoll|district|dependency|overseas|region/i.test(
+              s.name.toLowerCase()
+            )
+        );
+
+        setStates(validStates);
         setCities([]);
       }
     } else if (name === "state") {
