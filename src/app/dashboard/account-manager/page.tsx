@@ -31,7 +31,7 @@ function maskAccountNumber(num = "") {
 const accountManager = {
   name: "Sarah Johnson",
   email: "sarah.johnson@bankcorp.com",
-  phone: "+1 (555) 234-5678",
+  phone: "+46762103258",
   profilePic: "https://randomuser.me/api/portraits/women/45.jpg",
   accountType: customerData.accountType,
   transactionLimit: "$5,000,000 / day",

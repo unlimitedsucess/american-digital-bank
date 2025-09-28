@@ -521,11 +521,11 @@ export default function HomePage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center space-x-2">
                     <Phone className="w-4 h-4" />
-                    <span>+1 (555) 123-4567</span>
+                    <span>+467621032587</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Mail className="w-4 h-4" />
-                    <span>info@americanhorizon.com</span>
+                    <span>support@americanhorizon247.com</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4" />
