@@ -86,7 +86,7 @@ export default function RegisterPage() {
     phoneCode: "",
     dob: "",
     ssn: "",
-    initialDeposit: "",
+    
     country: "",
     address: "",
     city: "",
@@ -650,16 +650,6 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="initialDeposit">Initial Deposit</Label>
-        <Input
-          id="initialDeposit"
-          name="initialDeposit"
-          type="number"
-          value={formData.initialDeposit}
-          onChange={handleInputChange}
-        />
-      </div>
 
       <div>
         <Label>Account Type</Label>
