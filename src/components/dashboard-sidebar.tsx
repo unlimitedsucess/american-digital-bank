@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AmericanHLogo } from "./skyflex-logo";
+import { useRouter } from "next/navigation";
 import {
   Home,
   CreditCard,
@@ -50,12 +51,14 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  const router = useRouter()
+
   const pathname = usePathname();
   const customerData = useSelector(
     (state: RootState) => state.customer.customerData
   );
   const dispatch = useDispatch();
-  const logout = useLogout(dispatch);
+  const logout = useLogout(dispatch,false)
 
   useEffect(() => {
     const checkScreen = () => setIsMobile(window.innerWidth < 1024);
@@ -246,12 +249,12 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
                       Security
                     </Link>
                     <div className="border-t border-border my-1" />
-                    <Link
-                      href="/login"
+                    <button
+                      onClick={()=>router.push("/login")}
                       className="block px-4 py-2 text-sm text-foreground hover:bg-muted"
                     >
                       Sign Out
-                    </Link>
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
