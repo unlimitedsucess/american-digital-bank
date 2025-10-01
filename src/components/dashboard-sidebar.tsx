@@ -168,7 +168,7 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
                   className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   asChild
                 >
-                  <Button onClick={logout}>
+                  <Button variant="secondary"  onClick={logout}>
                     <LogOut className="w-5 h-5 mr-3" />
                     Sign Out
                   </Button>
