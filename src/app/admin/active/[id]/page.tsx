@@ -397,6 +397,12 @@ const body = {
                     </div>
                   </div>
                   <div>
+                    <Label>Account number</Label>
+                    <div className="mt-1">
+                      {user.accountNumber}
+                    </div>
+                  </div>
+                  <div>
                     <Label>Email</Label>
                     <div className="mt-1">{userData.email}</div>
                   </div>
