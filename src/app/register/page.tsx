@@ -18,28 +18,18 @@ import {
 import { AmericanHLogo } from "@/components/skyflex-logo";
 import { WireframeLoader } from "@/components/wireframe-loader";
 import {
-  Eye,
-  EyeOff,
   Shield,
   Lock,
   User,
   ArrowRight,
   CheckCircle,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Country, State, City } from "country-state-city";
 import { useHttp } from "@/hooks/use-http";
 import { toast } from "sonner";
 
-// OTP modal
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const steps = [
@@ -54,15 +44,12 @@ export default function RegisterPage() {
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [selectedState, setSelectedState] = useState<string>("");
 
-  // email verification state
   const [isEmailVerified, setIsEmailVerified] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otp, setOtp] = useState("");
 
-  // location data
   const [countries, setCountries] = useState<any[]>([]);
   const [states, setStates] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
+
   const checkPasswordStrength = (password: string) => {
     return {
       hasUpper: /[A-Z]/.test(password),
@@ -86,7 +73,7 @@ export default function RegisterPage() {
     phoneCode: "",
     dob: "",
     ssn: "",
-    
+
     country: "",
     address: "",
     city: "",
@@ -118,15 +105,7 @@ export default function RegisterPage() {
   useEffect(() => {
     setCountries(Country.getAllCountries());
   }, []);
-
-  // check query param after clicking verification link
-  useEffect(() => {
-    const verified = searchParams.get("verified");
-    if (verified === "true" && !isEmailVerified) {
-      // show OTP modal
-      setShowOtpModal(true);
-    }
-  }, [searchParams, isEmailVerified]);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // 🔹 Form helpers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,6 +123,7 @@ export default function RegisterPage() {
       setPasswordChecks(newChecks);
     }
   };
+
   const handleSelectChange = (name: string, value: string) => {
     if (name === "country") {
       const country = Country.getAllCountries().find((c) => c.name === value);
@@ -152,13 +132,12 @@ export default function RegisterPage() {
           ...prev,
           country: value,
           phoneCode: country.phonecode ? `+${country.phonecode}` : "",
-          state: "", // reset state
-          city: "", // reset city
+          state: "",
+          city: "",
         }));
 
         setSelectedCountry(country.isoCode);
 
-        // Get all states but filter out territories/islands
         const validStates = State.getStatesOfCountry(country.isoCode).filter(
           (s) =>
             !/island|territory|atoll|district|dependency|overseas|region/i.test(
@@ -185,44 +164,53 @@ export default function RegisterPage() {
     }
   };
 
-  // 🔹 Step navigation
-  const handleNext = () => {
+  // 🔹 Step validation
+  const validateStep = () => {
+    let newErrors: { [key: string]: string } = {};
+
     if (currentStep === 1) {
-      if (
-        !formData.firstName ||
-        !formData.lastName ||
-        !formData.phoneNo ||
-        !formData.dob ||
-        !formData.ssn ||
-        !formData.address ||
-        !formData.city ||
-        !formData.state ||
-        !formData.zipCode ||
-        !formData.country
-      ) {
-        toast.error("Please complete all personal information fields.");
-        return;
-      }
-      if (formData.zipCode.length < 4) {
-        toast.error("Please enter a valid Zip Code.");
-        return;
-      }
+      if (!formData.firstName) newErrors.firstName = "First name is required.";
+      if (!formData.lastName) newErrors.lastName = "Last name is required.";
+      if (!formData.email) newErrors.email = "Email is required.";
+      if (!formData.dob) newErrors.dob = "Date of birth is required.";
+      if (!formData.ssn || formData.ssn.length !== 9)
+        newErrors.ssn = "SSN must be 9 digits.";
+      if (!formData.address) newErrors.address = "Address is required.";
+      if (!formData.country) newErrors.country = "Country is required.";
+      if (!formData.state) newErrors.state = "State is required.";
+      if (!formData.city) newErrors.city = "City is required.";
+      if (!formData.zipCode) newErrors.zipCode = "Zip code is required.";
+      if (!formData.phoneNo) newErrors.phoneNo = "Phone number is required.";
     }
 
     if (currentStep === 2) {
-      if (
-        !formData.userName ||
-        !formData.password ||
-        !formData.confirmPassword ||
-        !formData.pin ||
-        !formData.confirmPin ||
-        !formData.accountType
-      ) {
-        toast.error("Please complete all account details.");
-        return;
-      }
+      if (!formData.userName) newErrors.userName = "Username is required.";
+      if (!formData.password) newErrors.password = "Password is required.";
+      if (!formData.confirmPassword)
+        newErrors.confirmPassword = "Confirm password is required.";
+      if (formData.password !== formData.confirmPassword)
+        newErrors.confirmPassword = "Passwords do not match.";
+      if (!formData.pin) newErrors.pin = "PIN is required.";
+      if (!formData.confirmPin)
+        newErrors.confirmPin = "Confirm PIN is required.";
+      if (formData.pin !== formData.confirmPin)
+        newErrors.confirmPin = "PINs do not match.";
+      if (!formData.accountType)
+        newErrors.accountType = "Account type required.";
     }
 
+    if (currentStep === 3) {
+      if (!formData.passport) newErrors.passport = "Passport is required.";
+      if (!formData.driversLicence)
+        newErrors.driversLicence = "Driver’s license is required.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (!validateStep()) return;
     if (currentStep < 3) setCurrentStep(currentStep + 1);
   };
 
@@ -230,89 +218,13 @@ export default function RegisterPage() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  // send email verification
-  const sendVerificationEmail = () => {
-    if (!formData.email.includes("@")) {
-      toast.error("Please enter a valid email!");
-      return;
-    }
-
-    registerUserReq({
-      successRes: () => {
-        toast.success("Verification email sent. Please check your inbox.");
-        setShowOtpModal(true);
-      },
-      errorRes: (err) => {
-        const desc = err?.response?.data?.description;
-        if (desc === "Email already exist!") {
-          setShowOtpModal(true);
-          toast.info(
-            "Your email is already registered, please verify with OTP."
-          );
-          handleResendOtp;
-        }
-      },
-      requestConfig: {
-        url: "auth/send/email/otp",
-        method: "POST",
-        body: { email: formData.email },
-      },
-    });
-  };
-
-  // verify OTP
-  const handleOtpSubmit = () => {
-    if (otp.length !== 6) {
-      toast.error("Please enter the 6-digit OTP.");
-      return;
-    }
-
-    registerUserReq({
-      successRes: () => {
-        setIsEmailVerified(true);
-        setShowOtpModal(false);
-        setCurrentStep(1);
-        toast.success("Email verified successfully!");
-      },
-      requestConfig: {
-        url: "/auth/verify/email",
-        method: "POST",
-        body: { email: formData.email, otp },
-      },
-    });
-  };
-
   const registerUserRes = (res: any) => {
     router.push(`/login`);
   };
 
-  const handleResendOtp = () => {
-    registerUserReq({
-      successRes: () => {
-        toast.success("OTP resent successfully!");
-      },
-      requestConfig: {
-        url: "/auth/resend/email/verification/otp",
-        method: "POST",
-        body: { email: formData.email },
-      },
-    });
-  };
-
-  const handleBackToEmail = () => {
-    setShowOtpModal(false);
-    setIsEmailVerified(false);
-    setCurrentStep(1);
-    setOtp("");
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!isEmailVerified) {
-      toast.error("Please verify your email before continuing.");
-      return;
-    }
+    if (!validateStep()) return;
 
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match!");
@@ -337,7 +249,6 @@ export default function RegisterPage() {
         key !== "agreeToMarketing" &&
         key !== "phoneCode"
       ) {
-        // Always stringify zipCode to avoid number type issues
         if (key === "zipCode") {
           payload.append(key, String(value));
         } else {
@@ -352,11 +263,6 @@ export default function RegisterPage() {
     );
     payload.set("phoneNo", formattedPhone);
 
-    // ✅ Debug print FormData before sending
-    for (let [key, value] of payload.entries()) {
-      console.log(`${key}:`, value);
-    }
-
     registerUserReq({
       successRes: registerUserRes,
       requestConfig: {
@@ -368,190 +274,189 @@ export default function RegisterPage() {
     });
   };
 
-  // 🔹 Step 1 (Email → then Personal Info)
-  const renderPersonalInfo = () => {
-    if (!isEmailVerified) {
-      return (
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <Button
-            type="button"
-            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-            onClick={sendVerificationEmail}
-            disabled={loading}
+  // 🔹 Step renderers
+  const renderPersonalInfo = () => (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="firstName">First Name</Label>
+          <Input
+            id="firstName"
+            name="firstName"
+            value={formData.firstName}
+            onChange={handleInputChange}
+          />
+          {errors.firstName && (
+            <p className="text-red-500 text-sm">{errors.firstName}</p>
+          )}
+        </div>
+        <div>
+          <Label htmlFor="lastName">Last Name</Label>
+          <Input
+            id="lastName"
+            name="lastName"
+            value={formData.lastName}
+            onChange={handleInputChange}
+          />
+          {errors.lastName && (
+            <p className="text-red-500 text-sm">{errors.lastName}</p>
+          )}
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="email">Email Address</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange}
+        />
+        {errors.email && (
+          <p className="text-red-500 text-sm">{errors.email}</p>
+        )}
+      </div>
+      <div>
+        <Label htmlFor="dob">Date of Birth</Label>
+        <Input
+          id="dob"
+          name="dob"
+          type="date"
+          value={formData.dob}
+          onChange={handleInputChange}
+        />
+        {errors.dob && <p className="text-red-500 text-sm">{errors.dob}</p>}
+      </div>
+      <div>
+        <Label htmlFor="ssn">SSN (9-digit)</Label>
+        <Input
+          id="ssn"
+          name="ssn"
+          maxLength={9}
+          value={formData.ssn}
+          onChange={handleInputChange}
+        />
+        {errors.ssn && <p className="text-red-500 text-sm">{errors.ssn}</p>}
+      </div>
+      <div>
+        <Label htmlFor="address">Address</Label>
+        <Input
+          id="address"
+          name="address"
+          value={formData.address}
+          onChange={handleInputChange}
+        />
+        {errors.address && (
+          <p className="text-red-500 text-sm">{errors.address}</p>
+        )}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="country">Country</Label>
+          <Select
+            onValueChange={(val) => handleSelectChange("country", val)}
+            value={formData.country}
           >
-            {loading ? <LoadingSpinner /> : "Verify Email"}
-          </Button>
+            <SelectTrigger>
+              <SelectValue placeholder="Select country" />
+            </SelectTrigger>
+            <SelectContent>
+              {countries.map((c) => (
+                <SelectItem key={c.isoCode} value={c.name}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.country && (
+            <p className="text-red-500 text-sm">{errors.country}</p>
+          )}
         </div>
-      );
-    }
-
-    return (
-      <>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="firstName">First Name</Label>
+        <div>
+          <Label htmlFor="state">State</Label>
+          <Select
+            onValueChange={(val) => handleSelectChange("state", val)}
+            value={formData.state}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select state" />
+            </SelectTrigger>
+            <SelectContent>
+              {states.map((s) => (
+                <SelectItem key={s.isoCode} value={s.name}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.state && (
+            <p className="text-red-500 text-sm">{errors.state}</p>
+          )}
+        </div>
+        <div>
+          <Label htmlFor="city">City</Label>
+          <Select
+            onValueChange={(val) => handleSelectChange("city", val)}
+            value={formData.city}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select city" />
+            </SelectTrigger>
+            <SelectContent>
+              {cities.map((c) => (
+                <SelectItem key={c.name} value={c.name}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.city && (
+            <p className="text-red-500 text-sm">{errors.city}</p>
+          )}
+        </div>
+        <div>
+          <Label htmlFor="zipCode">Zip Code</Label>
+          <Input
+            id="zipCode"
+            name="zipCode"
+            value={formData.zipCode}
+            onChange={handleInputChange}
+          />
+          {errors.zipCode && (
+            <p className="text-red-500 text-sm">{errors.zipCode}</p>
+          )}
+        </div>
+        <div>
+          <Label htmlFor="phoneNo">Phone Number</Label>
+          <div className="flex">
             <Input
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleInputChange}
-              required
+              id="phoneCode"
+              name="phoneCode"
+              className="w-24 mr-2"
+              value={formData.phoneCode}
+              readOnly
+            />
+            <Input
+              id="phoneNo"
+              name="phoneNo"
+              value={formData.phoneNo}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  phoneNo: e.target.value.replace(/\D/g, ""),
+                }))
+              }
+              placeholder="Enter phone number"
             />
           </div>
-          <div>
-            <Label htmlFor="lastName">Last Name</Label>
-            <Input
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+          {errors.phoneNo && (
+            <p className="text-red-500 text-sm">{errors.phoneNo}</p>
+          )}
         </div>
+      </div>
+    </>
+  );
 
-        <div>
-          <Label htmlFor="dateOfBirth">Date of Birth</Label>
-          <Input
-            id="dob"
-            name="dob"
-            type="date"
-            value={formData.dob}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="ssn">SSN (9-digit)</Label>
-          <Input
-            id="ssn"
-            name="ssn"
-            maxLength={9}
-            value={formData.ssn}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="address">Address</Label>
-          <Input
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="country">Country</Label>
-            <Select
-              onValueChange={(val) => handleSelectChange("country", val)}
-              value={formData.country}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select country" />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((c) => (
-                  <SelectItem key={c.isoCode} value={c.name}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="state">State</Label>
-            <Select
-              onValueChange={(val) => handleSelectChange("state", val)}
-              value={formData.state}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select state" />
-              </SelectTrigger>
-              <SelectContent>
-                {states.map((s) => (
-                  <SelectItem key={s.isoCode} value={s.name}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="city">City</Label>
-            <Select
-              onValueChange={(val) => handleSelectChange("city", val)}
-              value={formData.city}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select city" />
-              </SelectTrigger>
-              <SelectContent>
-                {cities.map((c) => (
-                  <SelectItem key={c.name} value={c.name}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="zipCode">Zip Code</Label>
-            <Input
-              id="zipCode"
-              name="zipCode"
-              value={formData.zipCode}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div>
-            <Label htmlFor="phoneNo">Phone Number</Label>
-            <div className="flex">
-              <Input
-                id="phoneCode"
-                name="phoneCode"
-                className="w-24 mr-2"
-                value={formData.phoneCode}
-                readOnly
-              />
-              <Input
-                id="phoneNo"
-                name="phoneNo"
-                value={formData.phoneNo}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    phoneNo: e.target.value.replace(/\D/g, ""), // digits only
-                  }))
-                }
-                placeholder="Enter phone number"
-                required
-              />
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  };
-
-  // 🔹 Step 2 (Account Details)
   const renderAccountDetails = () => (
     <div className="space-y-4">
       <div>
@@ -561,10 +466,11 @@ export default function RegisterPage() {
           name="userName"
           value={formData.userName}
           onChange={handleInputChange}
-          required
         />
+        {errors.userName && (
+          <p className="text-red-500 text-sm">{errors.userName}</p>
+        )}
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="password">Password</Label>
@@ -574,10 +480,10 @@ export default function RegisterPage() {
             type="password"
             value={formData.password}
             onChange={handleInputChange}
-            required
           />
-
-          {/* Password rules */}
+          {errors.password && (
+            <p className="text-red-500 text-sm">{errors.password}</p>
+          )}
           <ul className="mt-2 text-xs space-y-1">
             <li
               className={
@@ -609,7 +515,6 @@ export default function RegisterPage() {
             </li>
           </ul>
         </div>
-
         <div>
           <Label htmlFor="confirmPassword">Confirm Password</Label>
           <Input
@@ -618,11 +523,12 @@ export default function RegisterPage() {
             type="password"
             value={formData.confirmPassword}
             onChange={handleInputChange}
-            required
           />
+          {errors.confirmPassword && (
+            <p className="text-red-500 text-sm">{errors.confirmPassword}</p>
+          )}
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="pin">4-digit PIN</Label>
@@ -633,8 +539,8 @@ export default function RegisterPage() {
             maxLength={4}
             value={formData.pin}
             onChange={handleInputChange}
-            required
           />
+          {errors.pin && <p className="text-red-500 text-sm">{errors.pin}</p>}
         </div>
         <div>
           <Label htmlFor="confirmPin">Confirm PIN</Label>
@@ -645,12 +551,12 @@ export default function RegisterPage() {
             maxLength={4}
             value={formData.confirmPin}
             onChange={handleInputChange}
-            required
           />
+          {errors.confirmPin && (
+            <p className="text-red-500 text-sm">{errors.confirmPin}</p>
+          )}
         </div>
       </div>
-
-
       <div>
         <Label>Account Type</Label>
         <Select
@@ -671,15 +577,17 @@ export default function RegisterPage() {
             <SelectItem value="joint">Joint</SelectItem>
           </SelectContent>
         </Select>
+        {errors.accountType && (
+          <p className="text-red-500 text-sm">{errors.accountType}</p>
+        )}
       </div>
-
       <div className="flex flex-col gap-2 mt-4">
         <div className="flex items-center gap-2">
           <Checkbox
             id="agreeToTerms"
             checked={formData.agreeToTerms}
             onCheckedChange={(checked) =>
-              handleSelectChange("agreeToTerms", checked ? "true" : "")
+              setFormData((prev) => ({ ...prev, agreeToTerms: !!checked }))
             }
           />
           <Label htmlFor="agreeToTerms">
@@ -692,7 +600,7 @@ export default function RegisterPage() {
             id="agreeToMarketing"
             checked={formData.agreeToMarketing}
             onCheckedChange={(checked) =>
-              handleSelectChange("agreeToMarketing", checked ? "true" : "")
+              setFormData((prev) => ({ ...prev, agreeToMarketing: !!checked }))
             }
           />
           <Label htmlFor="agreeToMarketing">
@@ -703,7 +611,6 @@ export default function RegisterPage() {
     </div>
   );
 
-  // 🔹 Step 3 (Verification & Documents)
   const renderVerification = () => (
     <div className="space-y-4">
       <div>
@@ -715,6 +622,9 @@ export default function RegisterPage() {
           accept="image/*"
           onChange={handleInputChange}
         />
+        {errors.passport && (
+          <p className="text-red-500 text-sm">{errors.passport}</p>
+        )}
       </div>
       <div>
         <Label htmlFor="driversLicence">Upload Driver’s License</Label>
@@ -725,6 +635,9 @@ export default function RegisterPage() {
           accept="image/*"
           onChange={handleInputChange}
         />
+        {errors.driversLicence && (
+          <p className="text-red-500 text-sm">{errors.driversLicence}</p>
+        )}
       </div>
       <p className="text-sm text-gray-600">
         Please ensure documents are clear and valid.
@@ -732,7 +645,6 @@ export default function RegisterPage() {
     </div>
   );
 
-  // 🔹 Step content
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -747,170 +659,115 @@ export default function RegisterPage() {
   };
 
   return (
-    <>
-      <WireframeLoader isLoading={isLoading}>
-        <div className="min-h-screen bg-gradient-to-br from-primary via-secondary to-accent flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl">
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: -30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center text-white mb-8"
-            >
-              <div className="flex items-center justify-center space-x-4 mb-4">
-                <AmericanHLogo size="md" />
-                <h1 className="text-3xl font-bold">American Horizon</h1>
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Open Your Account</h2>
-              <p className="text-white/90">
-                Join thousands of satisfied customers
-              </p>
-            </motion.div>
+    <WireframeLoader isLoading={isLoading}>
+      <div className="min-h-screen bg-gradient-to-br from-primary via-secondary to-accent flex items-center justify-center p-4">
+        <div className="w-full max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center text-white mb-8"
+          >
+            <div className="flex items-center justify-center space-x-4 mb-4">
+              <AmericanHLogo size="md" />
+              <h1 className="text-3xl font-bold">American Horizon</h1>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Open Your Account</h2>
+            <p className="text-white/90">Join thousands of satisfied customers</p>
+          </motion.div>
 
-            {/* Progress Steps */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="flex justify-center mb-8"
-            >
-              <div className="flex items-center space-x-4 w-full justify-center overflow-x-auto text-nowrap">
-                {steps.map((step, index) => (
-                  <div key={step.id} className="flex items-center">
-                    <div
-                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                        currentStep >= step.id
-                          ? "bg-white text-primary border-white"
-                          : "bg-transparent text-white border-white/50"
-                      }`}
-                    >
-                      <step.icon className="w-5 h-5" />
-                    </div>
-                    <span
-                      className={`ml-2 text-sm font-medium ${
-                        currentStep >= step.id ? "text-white" : "text-white/50"
-                      }`}
-                    >
-                      {step.title}
-                      {step.id === 1 && isEmailVerified && (
-                        <CheckCircle className="inline ml-1 w-4 h-4 text-green-400" />
-                      )}
-                    </span>
-                    {index < steps.length - 1 && (
-                      <div
-                        className={`w-8 h-0.5 mx-4 ${
-                          currentStep > step.id ? "bg-white" : "bg-white/30"
-                        }`}
-                      />
-                    )}
+          {/* Progress Steps */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex justify-center mb-8"
+          >
+            <div className="flex items-center space-x-4 w-full justify-center overflow-x-auto text-nowrap">
+              {steps.map((step, index) => (
+                <div key={step.id} className="flex items-center">
+                  <div
+                    className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                      currentStep >= step.id
+                        ? "bg-white text-primary border-white"
+                        : "bg-transparent text-white border-white/50"
+                    }`}
+                  >
+                    <step.icon className="w-5 h-5" />
                   </div>
-                ))}
-              </div>
-            </motion.div>
+                  <span
+                    className={`ml-2 text-sm font-medium ${
+                      currentStep >= step.id ? "text-white" : "text-white/50"
+                    }`}
+                  >
+                    {step.title}
+                    {step.id === 1 && (
+                      <CheckCircle className="inline ml-1 w-4 h-4 text-green-400" />
+                    )}
+                  </span>
+                  {index < steps.length - 1 && (
+                    <div
+                      className={`w-8 h-0.5 mx-4 ${
+                        currentStep > step.id ? "bg-white" : "bg-white/30"
+                      }`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
 
-            {/* Form Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              <Card className="w-full max-w-2xl mx-auto shadow-2xl">
-                <CardHeader className="text-center">
-                  <CardTitle className="text-xl font-bold">
-                    Step {currentStep} of 3
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <form onSubmit={currentStep === 3 ? handleSubmit : undefined}>
-                    {renderStepContent()}
-
-                    <div className="flex justify-between pt-6">
-                      {currentStep > 1 && (
+          {/* Form Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            <Card className="w-full max-w-2xl mx-auto shadow-2xl">
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl font-bold">
+                  Step {currentStep} of 3
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <form onSubmit={currentStep === 3 ? handleSubmit : undefined}>
+                  {renderStepContent()}
+                  <div className="flex justify-between pt-6">
+                    {currentStep > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handlePrevious}
+                      >
+                        Previous
+                      </Button>
+                    )}
+                    <div className="ml-auto">
+                      {currentStep < 3 ? (
                         <Button
                           type="button"
-                          variant="outline"
-                          onClick={handlePrevious}
+                          onClick={handleNext}
+                          className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
                         >
-                          Previous
+                          Next <ArrowRight className="ml-2 w-4 h-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          type="submit"
+                          className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                          disabled={!formData.agreeToTerms || loading}
+                        >
+                          {loading ? <LoadingSpinner /> : "Create Account"}
                         </Button>
                       )}
-                      <div className="ml-auto">
-                        {currentStep < 3 ? (
-                          <Button
-                            type="button"
-                            onClick={handleNext}
-                            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                            disabled={!isEmailVerified && currentStep === 1}
-                          >
-                            Next <ArrowRight className="ml-2 w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            type="submit"
-                            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                            disabled={!formData.agreeToTerms || loading}
-                          >
-                            {loading ? <LoadingSpinner /> : "  Create Account"}
-                          </Button>
-                        )}
-                      </div>
                     </div>
-                  </form>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
-      </WireframeLoader>
-
-      {/* OTP Modal */}
-      <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Email Verification</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Enter the 6-digit OTP sent to <strong>{formData.email}</strong>
-            </p>
-
-            <Input
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="Enter OTP"
-              maxLength={6}
-              className="text-center tracking-widest"
-            />
-
-            <Button
-              onClick={handleOtpSubmit}
-              className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
-              disabled={loading}
-            >
-              {loading ? <LoadingSpinner /> : "Verify OTP"}
-            </Button>
-
-            <div className="flex justify-between text-sm">
-              <button
-                type="button"
-                onClick={handleResendOtp}
-                className="text-blue-600 hover:underline"
-              >
-                Resend OTP
-              </button>
-              <button
-                type="button"
-                onClick={handleBackToEmail}
-                className="text-gray-500 hover:underline"
-              >
-                Back
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+      </div>
+    </WireframeLoader>
   );
 }
