@@ -168,7 +168,7 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
                   className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   asChild
                 >
-                  <Button variant="secondary"  onClick={logout}>
+                  <Button variant="ghost"   onClick={logout}>
                     <LogOut className="w-5 h-5 mr-3" />
                     Sign Out
                   </Button>
@@ -250,7 +250,7 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
                     </Link>
                     <div className="border-t border-border my-1" />
                     <button
-                      onClick={()=>router.push("/login")}
+                      onClick={logout}
                       className="block px-4 py-2 text-sm text-foreground hover:bg-muted"
                     >
                       Sign Out
