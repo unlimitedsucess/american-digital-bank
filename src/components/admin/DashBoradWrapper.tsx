@@ -16,6 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useLogout } from "@/utils/logout";
+import { useDispatch } from "react-redux";
 
 const menuItems = [
   { name: "Admin Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -34,6 +36,8 @@ export default function DashboardWrapper({
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+    const dispatch = useDispatch();
+    const logout = useLogout(dispatch, true);
 
   // ✅ track screen size
   useEffect(() => {
@@ -111,7 +115,7 @@ export default function DashboardWrapper({
 
             {/* Logout at bottom */}
             <div className="p-4 border-t">
-              <button className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-red-100 text-red-600 font-medium">
+              <button onClick={logout} className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-red-100 text-red-600 font-medium">
                 <LogOut size={18} />
                 Logout
               </button>

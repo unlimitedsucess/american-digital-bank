@@ -24,8 +24,9 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
+import { useLogout } from "@/utils/logout";
 const sidebarItems = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Online Deposit", href: "/dashboard/deposit", icon: Wallet },
@@ -38,6 +39,7 @@ const sidebarItems = [
   { name: "Account Manager", href: "/dashboard/account-manager", icon: User },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
+
 
 interface DashboardSidebarProps {
   children: React.ReactNode;
@@ -52,7 +54,8 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
   const customerData = useSelector(
     (state: RootState) => state.customer.customerData
   );
-
+  const dispatch = useDispatch();
+  const logout = useLogout(dispatch);
 
   useEffect(() => {
     const checkScreen = () => setIsMobile(window.innerWidth < 1024);
@@ -162,10 +165,10 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
                   className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   asChild
                 >
-                  <Link href="/login">
+                  <Button onClick={logout}>
                     <LogOut className="w-5 h-5 mr-3" />
                     Sign Out
-                  </Link>
+                  </Button>
                 </Button>
               </div>
             </div>
