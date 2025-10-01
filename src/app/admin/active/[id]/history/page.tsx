@@ -90,7 +90,6 @@ export default function UserHistoryPage() {
     bankName: "",
     description: "",
     amount: 0,
-    pin: undefined,
     transactionDate: "",
   });
 
@@ -206,7 +205,6 @@ export default function UserHistoryPage() {
       bankName: "",
       description: "",
       amount: 0,
-      pin: "",
       transactionDate: "",
     });
     setCountry("");
