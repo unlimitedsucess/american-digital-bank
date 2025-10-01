@@ -267,7 +267,7 @@ export default function RegisterPage() {
       successRes: registerUserRes,
       requestConfig: {
         url: "/auth/signup",
-        method: "PATCH",
+        method: "POST",
         body: payload,
         successMessage: "Registration Complete, Please login.",
       },
