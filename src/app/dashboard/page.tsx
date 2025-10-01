@@ -143,7 +143,9 @@ export default function DashboardPage() {
 
   const monthlyData = getMonthlyData(Transactions);
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      router.push("/login")
+    };
 
     const fetchTransactionsSuccess = (res: any) => {
       // Adjust based on your API structure
@@ -169,7 +171,9 @@ export default function DashboardPage() {
     });
   }, [token, dispatch]);
 useEffect(() => {
-  if (!token) return;
+  if (!token) {
+    router.push("/login")
+  };
 
   const fetchUserSucRes = (res: any) => {
     const resData = res?.data;
