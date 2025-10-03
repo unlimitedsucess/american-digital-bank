@@ -14,11 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 import { useDispatch, useSelector } from "react-redux";
-import {
-  deleteTransaction,
-  
-  addTransaction,
-} from "@/store/data/admin-slice";
+import { deleteTransaction, addTransaction } from "@/store/data/admin-slice";
 import { useRouter, useParams } from "next/navigation";
 import { RootState } from "@/store";
 import { useHttp } from "@/hooks/use-http";
@@ -41,8 +37,12 @@ export default function UserHistoryPage() {
   }, [token, router]);
 
   const transactions = useSelector((state: RootState) =>
-    state.admin.transactions.filter((t) => t.userId._id === id)
+    state.admin.transactions.filter((t) => {
+      const userId = typeof t.userId === "string" ? t.userId : t.userId?._id;
+      return String(userId) === String(id);
+    })
   );
+
   const { sendHttpRequest: DeleteTransactionRequest } = useHttp();
 
   const dispatch = useDispatch();
@@ -133,7 +133,6 @@ export default function UserHistoryPage() {
         swiftCode,
         routingNumber,
         bankName: undefined,
-       
       }),
     };
     console.log("Submitting transfer with payload:", payload);
@@ -342,8 +341,6 @@ export default function UserHistoryPage() {
                   </select>
                 </label>
 
-            
-
                 {/* Recipient */}
                 <label className="block col-span-1">
                   Recipient Name
@@ -413,7 +410,6 @@ export default function UserHistoryPage() {
                     <option value="transfer">Transfer</option>
                     <option value="withdrawal">Withdrawal</option>
                     <option value="deposit">Deposit</option>
-                  
                   </select>
                 </label>
                 <label className="block col-span-1">

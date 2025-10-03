@@ -35,7 +35,9 @@ import { useDispatch } from "react-redux";
 
 import { deleteUser , updateUser } from "@/store/data/admin-slice";
 export default function ActiveUserDetailPage() {
-  const { id } = useParams();
+  const params = useParams();
+const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
+
   const router = useRouter();
   const token = useSelector((state: any) => state.token?.token);
  const user = useSelector((state: RootState) =>
