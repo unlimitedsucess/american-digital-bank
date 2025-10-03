@@ -29,7 +29,7 @@ export default function ActiveUsersPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activeUsers.map((user) => (
             <Card
-              key={user.id}
+              key={user._id}
               className="shadow-md hover:shadow-lg transition"
             >
               <CardHeader>
