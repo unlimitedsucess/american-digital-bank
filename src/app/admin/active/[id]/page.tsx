@@ -68,7 +68,7 @@ export default function ActiveUserDetailPage() {
 
   console.log("User from store:", user);
   const dispatch = useDispatch();
-  // Load countries
+
   useEffect(() => {
     setCountries(Country.getAllCountries());
   }, []);
