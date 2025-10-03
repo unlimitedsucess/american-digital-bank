@@ -38,9 +38,10 @@ export default function ActiveUserDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const token = useSelector((state: any) => state.token?.token);
-  const user = useSelector((state: RootState) =>
-    state.admin.users.find((u) => String(u._id) === String(id))
-  );
+ const user = useSelector((state: RootState) =>
+  state.admin.users.find((u) => u?._id && String(u._id) === String(id))
+);
+
 
   const { loading: deleteLoading, sendHttpRequest: DeleteUserRequest } = useHttp();
   const { loading: editLoading, sendHttpRequest: EditUserRequest } = useHttp();
@@ -339,7 +340,7 @@ const body = {
             <h1 className="text-2xl font-bold">
               {userData.firstName} {userData.lastName}
             </h1>
-            <p className="text-sm text-muted-foreground">User ID: {user._id}</p>
+            <p className="text-sm text-muted-foreground">User ID: {user._id || "N/A"}</p>
           </div>
 
           <div className="flex-col-reverse h-fit space-y-5 flex  md:flex-row  w-fit items-center md:gap-3">
@@ -783,7 +784,7 @@ const body = {
                   <Label>Driver License / ID</Label>
                   <Input
                     type="file"
-                    name="licenseFile"
+                    name="driversLicenceFile"
                     onChange={handleFileChange}
                   />
                   {licensePreview && (
