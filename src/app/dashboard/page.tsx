@@ -53,7 +53,6 @@ export default function DashboardPage() {
     return () => clearTimeout(timer);
   }, []);
 
-
   // Helper to get month name from Date
   const monthNames = [
     "Jan",
@@ -128,13 +127,27 @@ export default function DashboardPage() {
   const todayStr = new Date().toISOString().split("T")[0];
 
   // Sum of all transactions created today
-  const todaysTransactionsTotal = Transactions.reduce((total, tx) => {
-    const txDateStr = new Date(tx.createdAt).toISOString().split("T")[0];
-    if (txDateStr === todayStr) {
-      return total + (tx.amount || 0);
-    }
-    return total;
-  }, 0);
+  // const todaysTransactionsTotal = Transactions.reduce((total, tx) => {
+  //   const txDateStr = new Date(tx.createdAt).toISOString().split("T")[0];
+  //   if (txDateStr === todayStr) {
+  //     return total + (tx.amount || 0);
+  //   }
+  //   return total;
+  // }, 0);
+
+ 
+
+const todaysTransactionsTotal = Transactions.reduce((total, tx) => {
+  const txDateStr = new Date(tx.createdAt).toISOString().split("T")[0];
+
+  // Only include today's debit transactions
+  if (txDateStr === todayStr && tx.transactionDirection === "debit") {
+    return total + (tx.amount || 0);
+  }
+
+  return total;
+}, 0);
+
 
   // Remaining transfer limit
   const remainingTransferLimit = TRANSFER_LIMIT - todaysTransactionsTotal;
@@ -144,8 +157,8 @@ export default function DashboardPage() {
   const monthlyData = getMonthlyData(Transactions);
   useEffect(() => {
     if (!token) {
-      router.push("/login")
-    };
+      router.push("/login");
+    }
 
     const fetchTransactionsSuccess = (res: any) => {
       // Adjust based on your API structure
@@ -170,88 +183,85 @@ export default function DashboardPage() {
       successRes: fetchTransactionsSuccess,
     });
   }, [token, dispatch]);
-useEffect(() => {
-  if (!token) {
-    router.push("/login")
-  };
-
-  const fetchUserSucRes = (res: any) => {
-    const resData = res?.data;
-    const user = resData?.data;
-
-    // Sometimes backend might return pending with 200 (double check)
-    if (user?.accountStatus === "pending") {
-      console.log("Redirecting because account status is pending...");
-      router.push("/dashboard/account-pending");
-      return;
+  useEffect(() => {
+    if (!token) {
+      router.push("/login");
     }
 
-    console.log("✅ User fetched:", user?.accountStatus);
-    console.log("Full user data:", user);
+    const fetchUserSucRes = (res: any) => {
+      const resData = res?.data;
+      const user = resData?.data;
 
-    // Save to Redux
-    dispatch(
-      customerActions.updateCustomerData({
-        email: user?.email,
-        phoneNo: user?.phoneNo,
-        firstName: user?.first_name || user?.firstName,
-        lastName: user?.last_name || user?.lastName,
-        accountNumber: user?.accountNumber,
-        address: user?.address,
-        country: user?.country,
-        city: user?.city,
-        accountType: user?.accountType,
-        userName: user?.userName,
-        pin: user?.pin,
-        expenses: user?.expenses,
-        loan: user?.loan,
-        loanBalance: user?.loanBalance,
-        passportUrl: user?.passportUrl,
-        driversLicence: user?.driversLicence,
-        emailVerified: user?.emailVerified,
-        state: user?.state,
-        createdAt: user?.createdAt,
-        updatedAt: user?.updatedAt,
-        initialDeposit: user?.initialDeposit,
-      })
-    );
-  };
+      // Sometimes backend might return pending with 200 (double check)
+      if (user?.accountStatus === "pending") {
+        console.log("Redirecting because account status is pending...");
+        router.push("/dashboard/account-pending");
+        return;
+      }
 
-  const fetchUserErrRes = (err: any) => {
-    console.error("❌ User info error:", err);
+      console.log("✅ User fetched:", user?.accountStatus);
+      console.log("Full user data:", user);
 
-    // ✅ Handle pending in error
-    if (err?.response?.data?.data?.accountStatus === "pending") {
-      console.log("⚠️ Redirecting: account is pending...");
-      router.push("/dashboard/account-pending");
-      return;
-    }
+      // Save to Redux
+      dispatch(
+        customerActions.updateCustomerData({
+          email: user?.email,
+          phoneNo: user?.phoneNo,
+          firstName: user?.first_name || user?.firstName,
+          lastName: user?.last_name || user?.lastName,
+          accountNumber: user?.accountNumber,
+          address: user?.address,
+          country: user?.country,
+          city: user?.city,
+          accountType: user?.accountType,
+          userName: user?.userName,
+          pin: user?.pin,
+          expenses: user?.expenses,
+          loan: user?.loan,
+          loanBalance: user?.loanBalance,
+          passportUrl: user?.passportUrl,
+          driversLicence: user?.driversLicence,
+          emailVerified: user?.emailVerified,
+          state: user?.state,
+          createdAt: user?.createdAt,
+          updatedAt: user?.updatedAt,
+          initialDeposit: user?.initialDeposit,
+        })
+      );
+    };
 
-    // Show other errors
-    toast.error(
-      err?.response?.data?.description || "Something went wrong fetching user info"
-    );
-  };
+    const fetchUserErrRes = (err: any) => {
+      console.error("❌ User info error:", err);
 
-  userInforHttpRequest({
-    requestConfig: {
-      url: "/user",
-      method: "GET",
-      token,
-      isAuth: true,
-      successMessage: "User info fetched",
-      userType: "customer",
-    },
-    successRes: fetchUserSucRes,
-    errorRes: fetchUserErrRes, // ✅ Add this
-  });
+      // ✅ Handle pending in error
+      if (err?.response?.data?.data?.accountStatus === "pending") {
+        console.log("⚠️ Redirecting: account is pending...");
+        router.push("/dashboard/account-pending");
+        return;
+      }
 
+      // Show other errors
+      toast.error(
+        err?.response?.data?.description ||
+          "Something went wrong fetching user info"
+      );
+    };
 
-  console.log("Fetching user info...", );
-}, [token, dispatch, router]);
+    userInforHttpRequest({
+      requestConfig: {
+        url: "/user",
+        method: "GET",
+        token,
+        isAuth: true,
+        successMessage: "User info fetched",
+        userType: "customer",
+      },
+      successRes: fetchUserSucRes,
+      errorRes: fetchUserErrRes, // ✅ Add this
+    });
 
-
-
+    console.log("Fetching user info...");
+  }, [token, dispatch, router]);
 
   return (
     <WireframeLoader isLoading={isLoading}>
