@@ -176,7 +176,7 @@ export default function UserHistoryPage() {
           transactionType: tx.transactionType,
           transactionDirection: tx.transactionDirection,
           status: tx.status || "pending",
-          createdAt: tx.createdAt || new Date().toISOString(),
+          createdAt: tx.transactionDate || new Date().toISOString(),
           updatedAt: tx.updatedAt || new Date().toISOString(),
           bankName: tx.bankName,
           userId: {
@@ -247,10 +247,7 @@ export default function UserHistoryPage() {
                     <td className="p-2 capitalize">{t.transferType}</td>
                     <td className="p-2 capitalize">{t.transactionDirection}</td>
                     <td className="p-2">${t.amount}</td>
-                    <td className="p-2 flex gap-2">
-                      <Button size="sm" variant="outline">
-                        Edit
-                      </Button>
+                    <td className="p-2 flex ">
                       <Button
                         type="button"
                         disabled={loadingIds.includes(t.id)}
