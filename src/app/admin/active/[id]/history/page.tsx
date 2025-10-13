@@ -176,7 +176,7 @@ export default function UserHistoryPage() {
           transactionType: tx.transactionType,
           transactionDirection: tx.transactionDirection,
           status: tx.status || "pending",
-          createdAt: tx.transactionDate || new Date().toISOString(),
+          transactionDate: tx.transactionDate || new Date().toISOString(),
           updatedAt: tx.updatedAt || new Date().toISOString(),
           bankName: tx.bankName,
           userId: {
@@ -215,6 +215,7 @@ export default function UserHistoryPage() {
     setTranType("");
     setStatus("");
   };
+  console.log ("transactions:", )
 
   return (
     <DashboardWrapper>
@@ -241,7 +242,7 @@ export default function UserHistoryPage() {
                 {transactions.map((t) => (
                   <tr key={t.id} className="border-b">
                     <td className="p-2">
-                      {new Date(t.createdAt).toLocaleString()}
+                      {new Date(t.transactionDate).toLocaleString()}
                     </td>
                     <td className="p-2 capitalize">{t.accountType}</td>
                     <td className="p-2 capitalize">{t.transferType}</td>

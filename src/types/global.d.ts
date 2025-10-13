@@ -426,7 +426,7 @@ export type Data = {
   passportUrl: string;
   driversLicence: string;
   emailVerified: boolean;
-  createdAt: string;
+  transactionDate: string;
   updatedAt: string;
   __v: 0;
   state: string;
@@ -445,8 +445,9 @@ interface Transaction {
   transferType: string;
   transactionType: string;
   transactionDirection: string;
+  transactionDate: string
   status: string;
-  createdAt: string;
+ 
   updatedAt: string;
   bankName?: string;
   userId: {
@@ -603,7 +604,7 @@ export interface Card {
   cardNumber?: string; // optional if backend sends
   holder?: string; // optional if backend sends
   status: "active" | "de-activated"; // ✅ only backend truth
-  createdAt?: string;
+  transactionDate?: string;
   updatedAt?: string;
 }
 
@@ -637,7 +638,7 @@ interface User {
   passportUrl: string;
   driversLicence: string;
   emailVerified: boolean;
-  createdAt: string;
+  transactionDate: string;
   updatedAt: string;
   id: string;
 }
@@ -657,7 +658,7 @@ interface Transaction {
   transactionType?: string;
   transactionDirection?: string;
   status: string;
-  createdAt: string;
+  transactionDate: string;
   updatedAt: string;
   id: string;
 }
@@ -697,7 +698,7 @@ interface Loan {
     passportUrl: string;
     driversLicence: string;
     emailVerified: boolean;
-    createdAt: string;
+    transactionDate: string;
     updatedAt: string;
     id: string;
   };
@@ -705,7 +706,7 @@ interface Loan {
 
 interface AdminCard {
   _id: string;
-  createdAt: string;
+  transactionDate: string;
   updatedAt: string;
   id: string;
   // add more card fields here if your API returns them

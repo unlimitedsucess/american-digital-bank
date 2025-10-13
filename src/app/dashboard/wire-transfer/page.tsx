@@ -31,8 +31,8 @@ import { customerActions } from "@/store/data/customer-slice";
 const accountTypes = [
   "savings",
   "current",
-  "Checking",
-  "Fixed",
+  "checking",
+  "fixed",
   "non-resident",
   "online",
   "domiciliary",

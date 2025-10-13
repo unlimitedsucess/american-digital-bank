@@ -112,12 +112,14 @@ export default function TransferPage() {
         toast.success("Transfer successful!");
         setShowSuccess(true);
         setShowPinModal(false);
-
+        
+        
         // ✅ Update remaining limit in Redux
         const newRemainingLimit = remainingLimit - formData.amount;
         dispatch(
-          customerActions.setRemainingTransferLimit(newRemainingLimit)
+          customerActions.setRemainingTransferLimit(newRemainingLimit),
         );
+          dispatch(customerActions.updateCustomerBalance(formData.amount));
       },
     });
   };

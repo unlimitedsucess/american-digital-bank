@@ -72,6 +72,8 @@ const totalLoans = AdminData.loans.length;
           })
         );
 
+        console.log ("transaction dates:", resData.transactions.transactionDate)
+
         dispatch(setLoading(false));
       },
       errorRes: (err: any) => {

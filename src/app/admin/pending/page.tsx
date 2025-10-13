@@ -49,7 +49,7 @@ export default function PendingUsersPage() {
                 <CardContent>
                   <p className="text-sm text-gray-600">{user.email}</p>
                   <p className="text-xs text-gray-400">
-                    Submitted: {new Date(user.createdAt).toLocaleString()}
+                    Submitted: {new Date(user.transactionDate).toLocaleString()}
                   </p>
                 </CardContent>
               </Card>

@@ -244,8 +244,8 @@ export default function TransactionsPage() {
                     </thead>
                     <tbody>
                       {filteredTransactions.map((transaction, index) => {
-                        const dateObj = transaction.createdAt
-                          ? new Date(transaction.createdAt)
+                        const dateObj = transaction.transactionDate
+                          ? new Date(transaction.transactionDate)
                           : null;
 
                         const formattedDate = dateObj

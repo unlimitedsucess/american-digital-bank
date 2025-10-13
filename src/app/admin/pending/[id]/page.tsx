@@ -183,7 +183,7 @@ const dispatch = useDispatch();
             {/* Submission Date */}
             <p className="text-sm text-gray-500">
               Submitted At:{" "}
-              {new Date(user.createdAt).toLocaleString([], {
+              {new Date(user.transactionDate).toLocaleString([], {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}

@@ -317,7 +317,7 @@ export default function LoanManagementPage() {
                 </p>
                 <p>
                   <strong>Application Date:</strong>{" "}
-                  {new Date(selectedLoan.createdAt).toLocaleString()}
+                  {new Date(selectedLoan.transactionDate).toLocaleString()}
                 </p>
                 <p>
                   <strong>Expiry Date:</strong>{" "}

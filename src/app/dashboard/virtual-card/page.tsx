@@ -116,7 +116,7 @@ export default function CardPage() {
           cardNumber: c.cardNumber || "**** **** **** 1234",
           holder: c.holder || "Card Holder",
           status: c.status || "active",
-          createdAt: c.createdAt,
+          transactionDate: c.transactionDate,
           updatedAt: c.updatedAt,
         }));
 

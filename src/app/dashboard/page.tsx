@@ -74,7 +74,7 @@ export default function DashboardPage() {
       {};
 
     transactions.forEach((tx) => {
-      const date = new Date(tx.createdAt);
+      const date = new Date(tx.transactionDate);
       const month = monthNames[date.getMonth()];
 
       if (!dataByMonth[month]) {
@@ -128,7 +128,7 @@ export default function DashboardPage() {
 
   // Sum of all transactions created today
   // const todaysTransactionsTotal = Transactions.reduce((total, tx) => {
-  //   const txDateStr = new Date(tx.createdAt).toISOString().split("T")[0];
+  //   const txDateStr = new Date(tx.transactionDate).toISOString().split("T")[0];
   //   if (txDateStr === todayStr) {
   //     return total + (tx.amount || 0);
   //   }
@@ -138,7 +138,7 @@ export default function DashboardPage() {
  
 
 const todaysTransactionsTotal = Transactions.reduce((total, tx) => {
-  const txDateStr = new Date(tx.createdAt).toISOString().split("T")[0];
+  const txDateStr = new Date(tx.transactionDate).toISOString().split("T")[0];
 
   // Only include today's debit transactions
   if (txDateStr === todayStr && tx.transactionDirection === "debit") {
@@ -223,7 +223,7 @@ const todaysTransactionsTotal = Transactions.reduce((total, tx) => {
           driversLicence: user?.driversLicence,
           emailVerified: user?.emailVerified,
           state: user?.state,
-          createdAt: user?.createdAt,
+          transactionDate: user?.transactionDate,
           updatedAt: user?.updatedAt,
           initialDeposit: user?.initialDeposit,
         })
@@ -564,16 +564,16 @@ const todaysTransactionsTotal = Transactions.reduce((total, tx) => {
                               {transaction.description || "-"}
                             </td>
                             <td className="py-3 px-2 text-sm">
-                              {transaction.createdAt
+                              {transaction.transactionDate
                                 ? new Date(
-                                    transaction.createdAt
+                                    transaction.transactionDate
                                   ).toLocaleDateString()
                                 : "-"}
                             </td>
                             <td className="py-3 px-2 text-sm">
-                              {transaction.createdAt
+                              {transaction.transactionDate
                                 ? new Date(
-                                    transaction.createdAt
+                                    transaction.transactionDate
                                   ).toLocaleTimeString([], {
                                     hour: "2-digit",
                                     minute: "2-digit",

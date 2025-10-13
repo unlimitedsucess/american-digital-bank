@@ -24,13 +24,13 @@ const customerInitialState: CustomerSliceParams = {
     passportUrl: "",
     driversLicence: "",
     emailVerified: false,
-    createdAt: "",
+    transactionDate: "",
     updatedAt: "",
     __v: 0,
   },
   transactions: [],
   remainingTransferLimit: 500000,
-    cards: [],
+  cards: [],
 };
 
 const customerSlice = createSlice({
@@ -46,19 +46,24 @@ const customerSlice = createSlice({
     ) {
       state.customerData = { ...state.customerData, ...action.payload };
     },
-    
-     setCards(state, action: PayloadAction<Card[]>) {
+
+    setCards(state, action: PayloadAction<Card[]>) {
       state.cards = action.payload;
     },
 
-    // ✅ New reducer for transactions
     setTransactions(state, action: PayloadAction<Transaction[]>) {
       state.transactions = action.payload;
     },
 
     setRemainingTransferLimit(state, action: PayloadAction<number>) {
-      // ✅ new
       state.remainingTransferLimit = action.payload;
+    },
+
+    // ✅ New reducer for updating balance
+    updateCustomerBalance(state, action: PayloadAction<number>) {
+      const currentBalance = Number(state.customerData.initialDeposit) || 0;
+      const newBalance = currentBalance - action.payload;
+      state.customerData.initialDeposit = newBalance.toString();
     },
 
     clearCustomer() {
